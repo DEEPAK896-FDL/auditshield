@@ -1,0 +1,92 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}Edit Finding — AuditShield{% endblock %}
+{% block page_title %}Edit Finding{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="ms-3">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'audit_list' %}">Audits</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'audit_detail' finding.audit.pk %}">{{ finding.audit.title|truncatechars:25 }}</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'finding_detail' finding.pk %}">Finding</a></li>
+    <li class="breadcrumb-item active">Edit</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-pencil-square me-2"></i>Edit Finding</h1>
+</div>
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="content-card">
+      <div class="content-card-header">
+        <h5>{{ finding.title|truncatechars:50 }}</h5>
+        <span class="severity-badge severity-{{ finding.severity }}">{{ finding.get_severity_display }}</span>
+      </div>
+      <div class="content-card-body">
+        <form method="post">
+          {% csrf_token %}
+          {% if is_manager %}
+          <!-- Manager sees full form -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Finding Title</label>
+            {{ form.title }}
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Severity</label>
+              {{ form.severity }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Target Closure Date</label>
+              {{ form.target_closure_date }}
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Description</label>
+            {{ form.description }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Recommendation</label>
+            {{ form.recommendation }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            {{ form.status }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Response Notes</label>
+            {{ form.response_notes }}
+          </div>
+          {% else %}
+          <!-- Auditee sees only response fields -->
+          <div class="alert alert-info d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>As Auditee Head, you can update the response notes and status of this finding.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Response / Action Taken</label>
+            {{ form.response_notes }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            {{ form.status }}
+          </div>
+          {% endif %}
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check-lg me-1"></i>Save Changes
+            </button>
+            <a href="{% url 'finding_detail' finding.pk %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

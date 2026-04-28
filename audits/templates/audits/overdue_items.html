@@ -1,0 +1,159 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}Overdue Items — AuditShield{% endblock %}
+{% block page_title %}Overdue Items{% endblock %}
+
+{% block content %}
+<!-- Summary badges -->
+<div class="d-flex gap-3 mb-4 flex-wrap">
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge bg-danger fs-6 px-3 py-2">{{ findings_count }}</span>
+    <span class="text-muted">Overdue Finding{{ findings_count|pluralize }}</span>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge bg-warning text-dark fs-6 px-3 py-2">{{ audits_count }}</span>
+    <span class="text-muted">Overdue Audit{{ audits_count|pluralize }}</span>
+  </div>
+</div>
+
+<!-- Bootstrap Tabs -->
+<ul class="nav nav-tabs mb-0" id="overdueTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active fw-semibold" id="findings-tab"
+            data-bs-toggle="tab" data-bs-target="#findings-pane"
+            type="button" role="tab" aria-controls="findings-pane" aria-selected="true">
+      <i class="bi bi-exclamation-triangle me-1 text-danger"></i>
+      Overdue Findings
+      <span class="badge bg-danger ms-1 rounded-pill">{{ findings_count }}</span>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" id="audits-tab"
+            data-bs-toggle="tab" data-bs-target="#audits-pane"
+            type="button" role="tab" aria-controls="audits-pane" aria-selected="false">
+      <i class="bi bi-clipboard-x me-1 text-warning"></i>
+      Overdue Audits
+      <span class="badge bg-warning text-dark ms-1 rounded-pill">{{ audits_count }}</span>
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content content-card rounded-top-0 border-top-0">
+  <!-- Tab 1: Overdue Findings -->
+  <div class="tab-pane fade show active" id="findings-pane" role="tabpanel" aria-labelledby="findings-tab">
+    {% if overdue_findings %}
+    <div class="table-responsive">
+      <table class="table table-modern table-hover mb-0">
+        <thead>
+          <tr>
+            <th class="ps-3">Finding Title</th>
+            <th>Audit</th>
+            <th>Department</th>
+            <th>Severity</th>
+            <th>Days Overdue</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for finding in overdue_findings %}
+          <tr>
+            <td class="ps-3">
+              <a href="{% url 'finding_detail' finding.pk %}" class="text-decoration-none fw-semibold text-navy">
+                {{ finding.title|truncatechars:40 }}
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'audit_detail' finding.audit.pk %}" class="text-decoration-none text-muted" style="font-size:0.83rem;">
+                {{ finding.audit.title|truncatechars:30 }}
+              </a>
+            </td>
+            <td><span class="text-muted" style="font-size:0.83rem;">{{ finding.audit.department.name }}</span></td>
+            <td>
+              <span class="severity-badge severity-{{ finding.severity }}">{{ finding.get_severity_display }}</span>
+            </td>
+            <td>
+              <span class="fw-bold text-danger">{{ finding.days_overdue }} day{{ finding.days_overdue|pluralize }}</span>
+            </td>
+            <td>
+              <span class="status-badge status-{{ finding.status }}">{{ finding.get_status_display }}</span>
+            </td>
+            <td>
+              <a href="{% url 'finding_detail' finding.pk %}" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-eye me-1"></i>View Finding
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state py-5">
+      <i class="bi bi-check-circle-fill text-success" style="font-size:2.5rem;"></i>
+      <h6 class="mt-3 text-success">No Overdue Findings!</h6>
+      <p class="text-muted">All findings are within their target closure dates.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Tab 2: Overdue Audits -->
+  <div class="tab-pane fade" id="audits-pane" role="tabpanel" aria-labelledby="audits-tab">
+    {% if overdue_audits %}
+    <div class="table-responsive">
+      <table class="table table-modern table-hover mb-0">
+        <thead>
+          <tr>
+            <th class="ps-3">Audit Title</th>
+            <th>Department</th>
+            <th>Assigned Auditor</th>
+            <th>End Date</th>
+            <th>Days Overdue</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for audit in overdue_audits %}
+          <tr>
+            <td class="ps-3">
+              <a href="{% url 'audit_detail' audit.pk %}" class="text-decoration-none fw-semibold text-navy">
+                {{ audit.title|truncatechars:40 }}
+              </a>
+            </td>
+            <td><span class="text-muted" style="font-size:0.83rem;">{{ audit.department.name }}</span></td>
+            <td style="font-size:0.83rem;">
+              {% if audit.assigned_auditor %}
+                {{ audit.assigned_auditor.get_full_name|default:audit.assigned_auditor.username }}
+              {% else %}
+                <span class="text-muted">Unassigned</span>
+              {% endif %}
+            </td>
+            <td class="text-muted" style="font-size:0.83rem;">{{ audit.end_date|date:"M d, Y" }}</td>
+            <td>
+              <span class="fw-bold text-danger">{{ audit.days_overdue }} day{{ audit.days_overdue|pluralize }}</span>
+            </td>
+            <td>
+              <span class="status-badge status-{{ audit.status }}">{{ audit.get_status_display }}</span>
+            </td>
+            <td>
+              <a href="{% url 'audit_detail' audit.pk %}" class="btn btn-sm btn-outline-warning">
+                <i class="bi bi-eye me-1"></i>View Audit
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state py-5">
+      <i class="bi bi-check-circle-fill text-success" style="font-size:2.5rem;"></i>
+      <h6 class="mt-3 text-success">No Overdue Audits!</h6>
+      <p class="text-muted">All audits are within their scheduled end dates.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

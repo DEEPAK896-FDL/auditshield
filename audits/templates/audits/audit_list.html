@@ -1,0 +1,136 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}Audits — AuditShield{% endblock %}
+{% block page_title %}Audits{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="ms-3">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Audits</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-clipboard-data me-2"></i>{% if is_manager %}All Audits{% else %}My Department Audits{% endif %}</h1>
+</div>
+
+<!-- Search + Filters -->
+<div class="content-card mb-4">
+  <div class="content-card-body">
+    <form method="get" class="d-flex gap-3 flex-wrap align-items-center">
+      <div class="flex-grow-1">
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search audits...">
+        </div>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="?{% if q %}q={{ q }}{% endif %}" class="btn {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %} btn-sm">All</a>
+        <a href="?status=planned{% if q %}&q={{ q }}{% endif %}" class="btn {% if status_filter == 'planned' %}btn-primary{% else %}btn-outline-secondary{% endif %} btn-sm">Planned</a>
+        <a href="?status=ongoing{% if q %}&q={{ q }}{% endif %}" class="btn {% if status_filter == 'ongoing' %}btn-primary{% else %}btn-outline-secondary{% endif %} btn-sm">Ongoing</a>
+        <a href="?status=closed{% if q %}&q={{ q }}{% endif %}" class="btn {% if status_filter == 'closed' %}btn-primary{% else %}btn-outline-secondary{% endif %} btn-sm">Closed</a>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    </form>
+  </div>
+</div>
+
+<!-- Audit Cards -->
+{% if page_obj %}
+<div class="row g-3">
+  {% for audit in page_obj %}
+  <div class="col-md-6 col-xl-4">
+    <div class="audit-card">
+      <div class="d-flex align-items-start justify-content-between mb-2">
+        <span class="status-badge status-{{ audit.status }}">{{ audit.get_status_display }}</span>
+        {% if audit.is_overdue %}
+        <span class="overdue-badge"><span class="overdue-dot"></span>Overdue</span>
+        {% endif %}
+      </div>
+      <div class="audit-card-title">{{ audit.title }}</div>
+      <div class="text-muted mb-2" style="font-size:0.8rem;">
+        <i class="bi bi-building me-1"></i>{{ audit.department.name }}
+      </div>
+      <div class="text-muted mb-3" style="font-size:0.78rem;">
+        <i class="bi bi-calendar-range me-1"></i>
+        {{ audit.start_date|date:"M d, Y" }} – {{ audit.end_date|date:"M d, Y" }}
+      </div>
+      {% if audit.assigned_auditor %}
+      <div class="text-muted mb-3" style="font-size:0.78rem;">
+        <i class="bi bi-person me-1"></i>{{ audit.assigned_auditor.get_full_name|default:audit.assigned_auditor.username }}
+      </div>
+      {% endif %}
+
+      <!-- Findings progress -->
+      <div class="d-flex align-items-center justify-content-between mb-1">
+        <span class="text-muted" style="font-size:0.75rem;">Findings</span>
+        <span class="fw-semibold" style="font-size:0.85rem;">{{ audit.findings_count }}</span>
+      </div>
+      {% if audit.findings_count > 0 %}
+      <div class="progress progress-thin mb-3">
+        <div class="progress-bar bg-success" style="width:{% widthratio audit.findings_count|add:0 audit.findings_count 100 %}%"></div>
+      </div>
+      {% else %}
+      <div class="progress progress-thin mb-3"><div class="progress-bar" style="width:0%"></div></div>
+      {% endif %}
+
+      <div class="mt-auto">
+        <a href="{% url 'audit_detail' audit.pk %}" class="btn btn-primary btn-sm w-100">
+          <i class="bi bi-eye me-1"></i>View Details
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4 d-flex justify-content-center" aria-label="Audit pagination">
+  <ul class="pagination pagination-sm">
+    {% if page_obj.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if q %}&q={{ q }}{% endif %}">
+        &laquo; Prev
+      </a>
+    </li>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+    <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+      <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if q %}&q={{ q }}{% endif %}">{{ num }}</a>
+    </li>
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if q %}&q={{ q }}{% endif %}">
+        Next &raquo;
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-clipboard-x text-muted"></i>
+  <h5>No Audits Found</h5>
+  <p class="text-muted">Try adjusting your search or filters.</p>
+  {% if is_manager %}
+  <a href="{% url 'audit_create' %}" class="btn btn-primary mt-2">
+    <i class="bi bi-plus-circle me-1"></i>Create First Audit
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if is_manager %}
+<a href="{% url 'audit_create' %}" class="fab-btn" data-bs-toggle="tooltip" title="Create New Audit">
+  <i class="bi bi-plus-lg"></i>
+</a>
+{% endif %}
+{% endblock %}

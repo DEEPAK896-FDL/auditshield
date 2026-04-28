@@ -1,0 +1,206 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}My Profile — AuditShield{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-body">
+
+  <!-- Messages -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert"
+           style="border-radius:10px;font-size:14px;">
+        {% if message.tags == 'success' %}
+          <i class="bi bi-check-circle-fill me-2"></i>
+        {% else %}
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {% endif %}
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row g-4">
+
+    <!-- LEFT: Avatar + Info Card -->
+    <div class="col-12 col-md-4">
+      <div class="card border-0 shadow-sm text-center p-4 h-100">
+
+        <!-- Avatar circle with initials -->
+        <div class="mx-auto mb-3" style="
+          width:90px; height:90px; border-radius:50%;
+          background:linear-gradient(135deg,#3b82f6,#7c3aed);
+          display:flex; align-items:center; justify-content:center;
+          font-family:'Syne',sans-serif; font-size:30px; font-weight:800;
+          color:#fff; letter-spacing:-1px;
+          box-shadow:0 8px 24px rgba(59,130,246,0.35);
+          flex-shrink:0;
+        ">
+          {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+        </div>
+
+        <!-- Full name -->
+        <h4 style="font-family:'Syne',sans-serif;font-weight:700;
+                   font-size:20px;color:var(--text-primary);margin-bottom:4px;">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </h4>
+
+        <!-- Username -->
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+          @{{ request.user.username }}
+        </p>
+
+        <!-- Role badge -->
+        {% if is_manager %}
+          <span class="badge-status badge-ongoing" style="display:inline-block;margin-bottom:12px;">
+            <i class="bi bi-shield-check me-1"></i>Audit Manager
+          </span>
+        {% else %}
+          <span class="badge-status badge-planned" style="display:inline-block;margin-bottom:12px;">
+            <i class="bi bi-person-check me-1"></i>Auditee Head
+          </span>
+        {% endif %}
+
+        <!-- Department (if auditee) -->
+        {% if is_auditee and profile.department %}
+          <p style="font-size:13px;color:var(--text-muted);">
+            <i class="bi bi-building me-1"></i>{{ profile.department }}
+          </p>
+        {% endif %}
+
+        <!-- Last login -->
+        <div style="
+          background:#f8fafc; border:1px solid var(--border);
+          border-radius:10px; padding:12px 16px; margin-top:16px;
+          text-align:left;
+        ">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;
+                      letter-spacing:0.8px;color:var(--text-muted);margin-bottom:4px;">
+            Last Login
+          </div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--text-primary);">
+            {% if last_login %}
+              {{ last_login|date:"N j, Y" }} at {{ last_login|time:"g:i A" }}
+            {% else %}
+              First login
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Member since -->
+        <div style="
+          background:#f8fafc; border:1px solid var(--border);
+          border-radius:10px; padding:12px 16px; margin-top:10px;
+          text-align:left;
+        ">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;
+                      letter-spacing:0.8px;color:var(--text-muted);margin-bottom:4px;">
+            Member Since
+          </div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--text-primary);">
+            {{ request.user.date_joined|date:"N j, Y" }}
+          </div>
+        </div>
+
+        <!-- Change Password button -->
+        <a href="{% url 'change_password' %}"
+           class="btn btn-outline-primary w-100 mt-3"
+           style="font-size:13px;">
+          <i class="bi bi-key me-2"></i>Change Password
+        </a>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: Edit Profile Form -->
+    <div class="col-12 col-md-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+
+          <div class="section-header mb-4">
+            <i class="bi bi-pencil-square"></i>
+            Edit Profile Information
+          </div>
+
+          <form method="post" action="{% url 'user_profile' %}">
+            {% csrf_token %}
+
+            <div class="row g-3">
+
+              <!-- First Name -->
+              <div class="col-12 col-sm-6">
+                <label class="form-label">First Name</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                  <div class="text-danger" style="font-size:12px;margin-top:4px;">
+                    {{ form.first_name.errors.0 }}
+                  </div>
+                {% endif %}
+              </div>
+
+              <!-- Last Name -->
+              <div class="col-12 col-sm-6">
+                <label class="form-label">Last Name</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                  <div class="text-danger" style="font-size:12px;margin-top:4px;">
+                    {{ form.last_name.errors.0 }}
+                  </div>
+                {% endif %}
+              </div>
+
+              <!-- Email -->
+              <div class="col-12">
+                <label class="form-label">Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                  <div class="text-danger" style="font-size:12px;margin-top:4px;">
+                    {{ form.email.errors.0 }}
+                  </div>
+                {% endif %}
+              </div>
+
+              <!-- Username (read-only) -->
+              <div class="col-12">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control"
+                       value="{{ request.user.username }}"
+                       disabled
+                       style="background:#f8fafc;color:var(--text-muted);">
+                <div style="font-size:11.5px;color:var(--text-muted);margin-top:5px;">
+                  Username cannot be changed.
+                </div>
+              </div>
+
+              <!-- Role (read-only) -->
+              <div class="col-12">
+                <label class="form-label">Role</label>
+                <input type="text" class="form-control"
+                       value="{% if is_manager %}Audit Manager{% else %}Auditee Head{% endif %}"
+                       disabled
+                       style="background:#f8fafc;color:var(--text-muted);">
+              </div>
+
+            </div>
+
+            <!-- Submit -->
+            <div class="d-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-check2 me-2"></i>Save Changes
+              </button>
+              <a href="{% url 'dashboard' %}" class="btn btn-light px-4">
+                Cancel
+              </a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

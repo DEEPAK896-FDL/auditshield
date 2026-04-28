@@ -1,0 +1,55 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}Access Denied — AuditShield{% endblock %}
+{% block page_title %}Access Denied{% endblock %}
+
+{% block content %}
+<div style="
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 60vh; text-align: center;
+">
+  <!-- Glow icon -->
+  <div style="
+    width: 100px; height: 100px; border-radius: 50%;
+    background: linear-gradient(135deg,
+      rgba(239,68,68,0.12), rgba(239,68,68,0.06));
+    border: 1.5px solid rgba(239,68,68,0.25);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 28px;
+    box-shadow: 0 0 40px rgba(239,68,68,0.15);
+  ">
+    <i class="bi bi-lock-fill"
+       style="font-size: 40px; color: #ef4444;
+              filter: drop-shadow(0 0 12px rgba(239,68,68,0.5));"></i>
+  </div>
+
+  <h1 style="
+    font-family: 'Syne', sans-serif;
+    font-size: 52px; font-weight: 800;
+    color: #0a1535; letter-spacing: -2px;
+    margin-bottom: 8px; line-height: 1;
+  ">403</h1>
+
+  <h2 style="
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 700;
+    color: #0a1535; margin-bottom: 14px;
+  ">Access Denied</h2>
+
+  <p style="
+    font-size: 15px; color: #64748b;
+    max-width: 400px; line-height: 1.6; margin-bottom: 32px;
+  ">
+    You do not have permission to access this page.
+    This area is restricted based on your role.
+  </p>
+
+  <a href="{% url 'dashboard' %}"
+     class="btn btn-primary px-5 py-2"
+     style="font-size: 14px; border-radius: 10px;">
+    <i class="bi bi-house me-2"></i>Return to Dashboard
+  </a>
+</div>
+{% endblock %}

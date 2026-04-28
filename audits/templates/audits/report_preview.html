@@ -1,0 +1,163 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}Report — {{ audit.title }} — AuditShield{% endblock %}
+{% block page_title %}Audit Report Preview{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="ms-3">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'audit_detail' audit.pk %}">{{ audit.title|truncatechars:25 }}</a></li>
+    <li class="breadcrumb-item active">Report</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Action Bar (no-print) -->
+<div class="d-flex gap-2 mb-4 no-print">
+  <a href="{% url 'download_report_pdf' audit.pk %}" class="btn btn-primary">
+    <i class="bi bi-file-earmark-pdf me-1"></i>Download PDF
+  </a>
+  <button onclick="window.print()" class="btn btn-outline-secondary">
+    <i class="bi bi-printer me-1"></i>Print
+  </button>
+  <a href="{% url 'audit_detail' audit.pk %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back to Audit
+  </a>
+</div>
+
+<!-- Report Notes Form -->
+<div class="content-card mb-4 no-print">
+  <div class="content-card-header">
+    <h5><i class="bi bi-file-text me-2"></i>Executive Summary Notes</h5>
+  </div>
+  <div class="content-card-body">
+    <form method="post">
+      {% csrf_token %}
+      {{ notes_form.summary_notes }}
+      <button type="submit" class="btn btn-sm btn-primary mt-2">
+        <i class="bi bi-save me-1"></i>Save Notes
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Report Preview (print-friendly) -->
+<div class="content-card" style="background:#fff; max-width:900px; margin:0 auto;" id="report-content">
+  <div class="content-card-body">
+    <!-- Letterhead -->
+    <div class="report-letterhead d-flex align-items-center justify-content-between mb-4">
+      <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-shield-fill-check fs-1" style="color:#1b2a4a;"></i>
+        <div>
+          <h2 class="mb-0 fw-bold" style="color:#1b2a4a;">AuditShield</h2>
+          <div class="text-muted" style="font-size:0.8rem;">Internal IT Audit Management System</div>
+        </div>
+      </div>
+      <div class="text-end">
+        <div class="fw-bold text-muted" style="font-size:0.8rem;">OFFICIAL AUDIT REPORT</div>
+        <div class="text-muted" style="font-size:0.75rem;">Generated: {% now "M d, Y" %}</div>
+        {% if report %}
+        <div class="text-muted" style="font-size:0.75rem;">Confidential</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Audit Info Table -->
+    <h5 class="fw-bold mb-3" style="color:#1b2a4a; border-left:3px solid #3b82f6; padding-left:10px;">Audit Information</h5>
+    <table class="table table-bordered table-sm mb-4">
+      <tbody>
+        <tr><td class="fw-semibold bg-light" style="width:30%;">Audit Title</td><td>{{ audit.title }}</td></tr>
+        <tr><td class="fw-semibold bg-light">Department</td><td>{{ audit.department.name }}</td></tr>
+        <tr><td class="fw-semibold bg-light">Assigned Auditor</td><td>{% if audit.assigned_auditor %}{{ audit.assigned_auditor.get_full_name|default:audit.assigned_auditor.username }}{% else %}Unassigned{% endif %}</td></tr>
+        <tr><td class="fw-semibold bg-light">Start Date</td><td>{{ audit.start_date|date:"M d, Y" }}</td></tr>
+        <tr><td class="fw-semibold bg-light">End Date</td><td>{{ audit.end_date|date:"M d, Y" }}</td></tr>
+        <tr><td class="fw-semibold bg-light">Status</td><td><span class="status-badge status-{{ audit.status }}">{{ audit.get_status_display }}</span></td></tr>
+        <tr><td class="fw-semibold bg-light">Created By</td><td>{% if audit.created_by %}{{ audit.created_by.get_full_name|default:audit.created_by.username }}{% else %}—{% endif %}</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Executive Summary -->
+    <h5 class="fw-bold mb-3" style="color:#1b2a4a; border-left:3px solid #3b82f6; padding-left:10px;">Executive Summary</h5>
+    {% if report.summary_notes %}
+    <p style="font-size:0.9rem;">{{ report.summary_notes }}</p>
+    {% else %}
+    <p class="text-muted" style="font-size:0.85rem;"><em>No summary notes provided. Add notes above and save.</em></p>
+    {% endif %}
+
+    <!-- Summary Stats -->
+    <div class="row g-2 mb-4">
+      <div class="col-4"><div class="text-center p-2 bg-light rounded"><div class="fw-bold fs-4">{{ findings|length }}</div><div style="font-size:0.75rem; color:#64748b;">Total Findings</div></div></div>
+      <div class="col-4"><div class="text-center p-2 rounded" style="background:#fff7ed;"><div class="fw-bold fs-4 text-warning">{% with cnt=0 %}{% for f in findings %}{% if f.status == 'open' %}{% with cnt=cnt|add:1 %}{% endwith %}{% endif %}{% endfor %}{{ audit.open_findings_count }}{% endwith %}</div><div style="font-size:0.75rem; color:#64748b;">Open</div></div></div>
+      <div class="col-4"><div class="text-center p-2 rounded" style="background:#fef2f2;"><div class="fw-bold fs-4 text-danger">{{ audit.critical_findings_count }}</div><div style="font-size:0.75rem; color:#64748b;">Critical</div></div></div>
+    </div>
+
+    <!-- Findings Table -->
+    <h5 class="fw-bold mb-3" style="color:#1b2a4a; border-left:3px solid #3b82f6; padding-left:10px;">Findings Detail</h5>
+    {% if findings %}
+    <div class="table-responsive mb-4">
+      <table class="table table-bordered table-sm">
+        <thead style="background:#1b2a4a; color:#fff;">
+          <tr>
+            <th style="width:30px;">#</th>
+            <th>Finding Title</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Target Date</th>
+            <th>Overdue?</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in findings %}
+          <tr class="finding-row-{{ f.severity }}">
+            <td class="text-center">{{ forloop.counter }}</td>
+            <td class="fw-semibold">{{ f.title }}</td>
+            <td><span class="severity-badge severity-{{ f.severity }}">{{ f.get_severity_display }}</span></td>
+            <td><span class="status-badge status-{{ f.status }}">{{ f.get_status_display }}</span></td>
+            <td>{{ f.target_closure_date|date:"m/d/Y" }}</td>
+            <td>{% if f.is_overdue %}<strong class="text-danger">YES</strong>{% else %}No{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Recommendations -->
+    <h5 class="fw-bold mb-3" style="color:#1b2a4a; border-left:3px solid #3b82f6; padding-left:10px;">Recommendations</h5>
+    {% for f in findings %}
+    <div class="mb-3">
+      <div class="fw-semibold" style="font-size:0.9rem; color:#1b2a4a;">{{ forloop.counter }}. {{ f.title }}</div>
+      <div style="font-size:0.85rem; color:#374151; padding-left:1rem;">{{ f.recommendation }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="text-muted">No findings recorded for this audit.</p>
+    {% endif %}
+
+    <!-- Report Footer -->
+    <hr class="mt-4">
+    <div class="d-flex justify-content-between text-muted" style="font-size:0.75rem;">
+      <span>Generated by AuditShield — Confidential</span>
+      <span>{% now "Y-m-d H:i" %}</span>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Severity-based row backgrounds */
+.finding-row-critical { background: #fee2e2; }
+.finding-row-high     { background: #ffedd5; }
+.finding-row-medium   { background: #fef9c3; }
+.finding-row-low      { background: #dcfce7; }
+
+@media print {
+  .no-print { display: none !important; }
+  .sidebar, .topbar, .fab-btn { display: none !important; }
+  .main-content { margin-left: 0; }
+  .page-wrapper { padding: 0; }
+  body { background: #fff; }
+}
+</style>
+{% endblock %}

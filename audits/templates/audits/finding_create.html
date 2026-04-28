@@ -1,0 +1,69 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}Add Finding — AuditShield{% endblock %}
+{% block page_title %}Add Finding{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="ms-3">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'audit_list' %}">Audits</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'audit_detail' audit.pk %}">{{ audit.title|truncatechars:25 }}</a></li>
+    <li class="breadcrumb-item active">Add Finding</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Add Finding</h1>
+</div>
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="content-card mb-3">
+      <div class="content-card-header">
+        <h5>Finding Details — <span class="text-muted fw-normal" style="font-size:0.85rem;">{{ audit.title }}</span></h5>
+      </div>
+      <div class="content-card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Finding Title *</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Severity *</label>
+              {{ form.severity }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Target Closure Date *</label>
+              {{ form.target_closure_date }}
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Description *</label>
+            {{ form.description }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Recommendation *</label>
+            {{ form.recommendation }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            {{ form.status }}
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning px-4 fw-semibold">
+              <i class="bi bi-check-lg me-1"></i>Add Finding
+            </button>
+            <a href="{% url 'audit_detail' audit.pk %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

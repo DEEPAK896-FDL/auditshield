@@ -1,0 +1,172 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}{{ audit.title }} — AuditShield{% endblock %}
+{% block page_title %}Audit Detail{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="ms-3">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'audit_list' %}">Audits</a></li>
+    <li class="breadcrumb-item active">{{ audit.title|truncatechars:30 }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Audit Header Band -->
+<div class="audit-detail-header mb-3">
+  <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="status-badge status-{{ audit.status }}">{{ audit.get_status_display }}</span>
+        {% if audit.is_overdue %}
+        <span class="overdue-badge"><span class="overdue-dot"></span>Overdue</span>
+        {% endif %}
+      </div>
+      <h1 class="h3 text-white fw-bold mb-1">{{ audit.title }}</h1>
+      <p class="mb-0 text-white" style="opacity:0.7; font-size:0.85rem;">
+        <i class="bi bi-building me-1"></i>{{ audit.department.name }} &bull;
+        <i class="bi bi-calendar-range ms-2 me-1"></i>{{ audit.start_date|date:"M d, Y" }} – {{ audit.end_date|date:"M d, Y" }}
+      </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      {% if is_manager %}
+      <a href="{% url 'audit_edit' audit.pk %}" class="btn btn-light btn-sm">
+        <i class="bi bi-pencil me-1"></i>Edit Audit
+      </a>
+      <a href="{% url 'finding_create' audit.pk %}" class="btn btn-warning btn-sm">
+        <i class="bi bi-plus-circle me-1"></i>Add Finding
+      </a>
+      {% if audit.status == 'closed' %}
+      <a href="{% url 'generate_report' audit.pk %}" class="btn btn-success btn-sm">
+        <i class="bi bi-file-earmark-text me-1"></i>View Report
+      </a>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Audit Info -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="info-panel h-100">
+      <div class="row g-2">
+        <div class="col-6">
+          <div class="info-label">Assigned Auditor</div>
+          <div class="info-value">
+            {% if audit.assigned_auditor %}{{ audit.assigned_auditor.get_full_name|default:audit.assigned_auditor.username }}{% else %}<span class="text-muted">Unassigned</span>{% endif %}
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="info-label">Created By</div>
+          <div class="info-value">
+            {% if audit.created_by %}{{ audit.created_by.get_full_name|default:audit.created_by.username }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="info-label">Start Date</div>
+          <div class="info-value">{{ audit.start_date|date:"M d, Y" }}</div>
+        </div>
+        <div class="col-6">
+          <div class="info-label">End Date</div>
+          <div class="info-value">{{ audit.end_date|date:"M d, Y" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="info-panel h-100">
+      {% if audit.objectives %}
+      <div class="mb-2">
+        <div class="info-label">Objectives</div>
+        <div class="info-value" style="font-size:0.85rem;">{{ audit.objectives }}</div>
+      </div>
+      {% endif %}
+      {% if audit.scope %}
+      <div>
+        <div class="info-label">Scope</div>
+        <div class="info-value" style="font-size:0.85rem;">{{ audit.scope }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Severity Summary Pills -->
+<div class="d-flex gap-2 flex-wrap mb-3">
+  <span class="severity-badge severity-critical">Critical: {{ severity_summary.critical }}</span>
+  <span class="severity-badge severity-high">High: {{ severity_summary.high }}</span>
+  <span class="severity-badge severity-medium">Medium: {{ severity_summary.medium }}</span>
+  <span class="severity-badge severity-low">Low: {{ severity_summary.low }}</span>
+</div>
+
+<!-- Findings Table -->
+<div class="content-card">
+  <div class="content-card-header">
+    <h5><i class="bi bi-exclamation-triangle me-2"></i>Findings ({{ audit.findings_count }})</h5>
+    {% if is_manager %}
+    <a href="{% url 'finding_create' audit.pk %}" class="btn btn-warning btn-sm">
+      <i class="bi bi-plus-circle me-1"></i>Add Finding
+    </a>
+    {% endif %}
+  </div>
+  <div class="content-card-body p-0">
+    {% if findings %}
+    <div class="table-responsive">
+      <table class="table table-modern table-hover mb-0">
+        <thead>
+          <tr>
+            <th class="ps-3" style="width:40px;">#</th>
+            <th>Finding Title</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Target Date</th>
+            <th>Flag</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for finding in findings %}
+          <tr data-overdue="{% if finding.is_overdue %}true{% else %}false{% endif %}">
+            <td class="ps-3 text-muted">{{ forloop.counter }}</td>
+            <td class="fw-semibold">{{ finding.title|truncatechars:50 }}</td>
+            <td><span class="severity-badge severity-{{ finding.severity }}">{{ finding.get_severity_display }}</span></td>
+            <td><span class="status-badge status-{{ finding.status }}">{{ finding.get_status_display }}</span></td>
+            <td class="text-muted" style="font-size:0.82rem;">{{ finding.target_closure_date|date:"M d, Y" }}</td>
+            <td>
+              {% if finding.is_overdue %}
+              <span class="overdue-badge"><span class="overdue-dot"></span>Overdue</span>
+              {% else %}
+              <span class="text-success" style="font-size:0.75rem;"><i class="bi bi-check"></i> On track</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="{% url 'finding_detail' finding.pk %}" class="btn btn-outline-primary btn-sm py-0 px-2">View</a>
+                {% if is_manager %}
+                <a href="{% url 'finding_edit' finding.pk %}" class="btn btn-outline-secondary btn-sm py-0 px-2">Edit</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state py-4">
+      <i class="bi bi-clipboard-x"></i>
+      <h5>No Findings Yet</h5>
+      {% if is_manager %}
+      <a href="{% url 'finding_create' audit.pk %}" class="btn btn-warning btn-sm mt-2">
+        <i class="bi bi-plus-circle me-1"></i>Add First Finding
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

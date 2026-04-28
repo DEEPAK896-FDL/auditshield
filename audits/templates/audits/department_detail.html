@@ -1,0 +1,336 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}{{ dept.name }} — AuditShield{% endblock %}
+{% block page_title %}Department Detail{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="ms-3">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'department_analytics' %}">Departments</a></li>
+    <li class="breadcrumb-item active">{{ dept.name }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="audit-detail-header mb-4">
+  <h1 class="h3 text-white fw-bold mb-1">
+    <i class="bi bi-building me-2"></i>{{ dept.name }}
+  </h1>
+  {% if dept.description %}
+  <p class="text-white mb-0" style="opacity:0.7;">{{ dept.description }}</p>
+  {% endif %}
+  {% if dept.head_user %}
+  <p class="text-white mt-1 mb-0" style="opacity:0.6; font-size:0.85rem;">
+    <i class="bi bi-person me-1"></i>Head: {{ dept.head_user.get_full_name|default:dept.head_user.username }}
+  </p>
+  {% endif %}
+</div>
+
+<!-- KPI Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-3">
+    <div class="stat-card primary">
+      <div class="stat-label">Total Audits</div>
+      <div class="stat-value">{{ dept_audits.count }}</div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="stat-card warning">
+      <div class="stat-label">Open Findings</div>
+      <div class="stat-value">{{ open_findings }}</div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="stat-card danger">
+      <div class="stat-label">Overdue Findings</div>
+      <div class="stat-value">{{ overdue_count }}</div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="stat-card success">
+      <div class="stat-label">Closed Audits</div>
+      <div class="stat-value">{{ closed_audits }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="chart-card">
+      <div class="chart-card-title"><i class="bi bi-pie-chart me-2"></i>Severity Distribution</div>
+      <div style="position:relative; height:300px; width:100%;">
+        <canvas id="chartDeptSeverity"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="chart-card">
+      <div class="chart-card-title"><i class="bi bi-bar-chart me-2"></i>Audit Status Breakdown</div>
+      <div style="position:relative; height:300px; width:100%;">
+        <canvas id="chartDeptStatus"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Audits Table -->
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-body p-0">
+    <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+      <i class="bi bi-clipboard-data text-primary"></i>
+      <h6 class="mb-0 fw-bold">
+        Audits ({{ dept_audits|length }})
+      </h6>
+    </div>
+    {% if dept_audits %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>AUDIT</th>
+            <th>STATUS</th>
+            <th>AUDITOR</th>
+            <th>FINDINGS</th>
+            <th>DATE RANGE</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for audit in dept_audits %}
+          <tr>
+            <td>
+              <div class="fw-semibold" style="font-size:13.5px;">
+                {{ audit.title }}
+              </div>
+            </td>
+            <td>
+              <span class="badge-status badge-{{ audit.status }}">
+                {{ audit.get_status_display }}
+              </span>
+            </td>
+            <td style="font-size:13px;">
+              {% if audit.assigned_auditor %}
+                {{ audit.assigned_auditor.get_full_name }}
+                {% if not audit.assigned_auditor.get_full_name %}
+                  {{ audit.assigned_auditor.username }}
+                {% endif %}
+              {% else %}
+                <span class="text-muted">Unassigned</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge bg-secondary rounded-pill px-3">
+                {{ audit.findings.count }}
+              </span>
+            </td>
+            <td style="font-size:13px;color:var(--text-secondary);">
+              {{ audit.start_date|date:"M d, Y" }}
+              &mdash;
+              {{ audit.end_date|date:"M d, Y" }}
+            </td>
+            <td>
+              <a href="{% url 'audit_detail' audit.pk %}"
+                 class="btn btn-sm btn-outline-primary"
+                 style="font-size:12px;">
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-clipboard-x"></i>
+      <p>No audits found for this department.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Open/Overdue Findings Table -->
+<div class="content-card">
+  <div class="content-card-header">
+    <h5><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Open &amp; Overdue Findings</h5>
+  </div>
+  <div class="content-card-body p-0">
+    {% with open_f=dept_findings %}
+    {% if open_f %}
+    <div class="table-responsive">
+      <table class="table table-modern table-hover mb-0">
+        <thead>
+          <tr>
+            <th class="ps-3">Finding</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Target Date</th>
+            <th>Flag</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in open_f %}
+          <tr data-overdue="{% if f.is_overdue %}true{% else %}false{% endif %}">
+            <td class="ps-3">
+              <a href="{% url 'finding_detail' f.pk %}" class="text-decoration-none fw-semibold text-navy">
+                {{ f.title|truncatechars:45 }}
+              </a>
+              <div class="text-muted" style="font-size:0.75rem;">{{ f.audit.title|truncatechars:35 }}</div>
+            </td>
+            <td><span class="severity-badge severity-{{ f.severity }}">{{ f.get_severity_display }}</span></td>
+            <td><span class="status-badge status-{{ f.status }}">{{ f.get_status_display }}</span></td>
+            <td class="text-muted" style="font-size:0.82rem;">{{ f.target_closure_date|date:"M d, Y" }}</td>
+            <td>
+              {% if f.is_overdue %}<span class="overdue-badge"><span class="overdue-dot"></span>Overdue</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state py-3"><i class="bi bi-check-circle text-success"></i>
+      <p class="mt-2">No findings!</p>
+    </div>
+    {% endif %}
+    {% endwith %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  'use strict';
+
+  /* ── Data inlined directly from Django context ── */
+  var severityLabels = ['Critical', 'High', 'Medium', 'Low'];
+  var severityValues = [{{ dd_critical }}, {{ dd_high }}, {{ dd_medium }}, {{ dd_low }}];
+
+  var statusLabels = ['Planned', 'Ongoing', 'Closed'];
+  var statusValues = [{{ dd_planned }}, {{ dd_ongoing }}, {{ dd_closed }}];
+
+  Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+  Chart.defaults.color = '#64748b';
+
+  function initCharts() {
+
+    /* Chart 4 — Severity Distribution Doughnut */
+    var el4 = document.getElementById('chartDeptSeverity');
+    if (el4) {
+      new Chart(el4, {
+        type: 'doughnut',
+        data: {
+          labels: severityLabels,
+          datasets: [{
+            data: severityValues,
+            backgroundColor: [
+              'rgba(220,38,38,0.9)',
+              'rgba(234,88,12,0.9)',
+              'rgba(202,138,4,0.9)',
+              'rgba(22,163,74,0.9)'
+            ],
+            borderColor: ['#dc2626','#ea580c','#ca8a04','#16a34a'],
+            borderWidth: 2,
+            hoverOffset: 12,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                padding: 16,
+                usePointStyle: true,
+                font: { size: 12 }
+              }
+            },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              padding: 12,
+              callbacks: {
+                label: function(ctx) {
+                  var total = ctx.dataset.data.reduce(function(a,b){return a+b;},0);
+                  var pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                  return '  ' + ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                }
+              }
+            }
+          },
+          animation: { duration: 1000, easing: 'easeOutQuart' }
+        }
+      });
+    }
+
+    /* Chart 5 — Audit Status Breakdown Bar */
+    var el5 = document.getElementById('chartDeptStatus');
+    if (el5) {
+      new Chart(el5, {
+        type: 'bar',
+        data: {
+          labels: statusLabels,
+          datasets: [{
+            label: 'Audits',
+            data: statusValues,
+            backgroundColor: [
+              'rgba(99,102,241,0.85)',
+              'rgba(14,165,233,0.85)',
+              'rgba(34,197,94,0.85)'
+            ],
+            borderColor: ['#6366f1','#0ea5e9','#22c55e'],
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false,
+            barPercentage: 0.5,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              padding: 12,
+              callbacks: {
+                label: function(ctx) {
+                  return '  ' + ctx.parsed.y + ' audit(s)';
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, precision: 0, color: '#94a3b8' },
+              grid: { color: 'rgba(148,163,184,0.15)', drawBorder: false }
+            },
+            x: {
+              ticks: { color: '#94a3b8' },
+              grid: { display: false }
+            }
+          },
+          animation: { duration: 900, easing: 'easeOutQuart' }
+        }
+      });
+    }
+
+  } /* end initCharts */
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCharts);
+  } else {
+    initCharts();
+  }
+
+}());
+</script>
+{% endblock %}

@@ -1,0 +1,457 @@
+{% extends 'audits/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard — AuditShield{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+{% if is_manager %}
+<!-- ── Manager Dashboard ─────────────────────────────────────────────────── -->
+
+<!-- KPI Cards Row -->
+<div class="row g-3 mb-4">
+
+  <!-- Total Audits -->
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'audit_list' %}" class="kpi-card kpi-card-blue">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Total Audits</div>
+          <div class="kpi-value">{{ total_audits }}</div>
+          <div class="kpi-sub">
+            <span style="color:#6366f1;font-weight:600;">{{ planned_audits }}</span> planned &bull;
+            <span style="color:#0ea5e9;font-weight:600;">{{ ongoing_audits }}</span> ongoing
+          </div>
+        </div>
+        <div class="kpi-icon kpi-icon-blue">
+          <i class="bi bi-clipboard-data"></i>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Open Findings -->
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'finding_list' %}" class="kpi-card kpi-card-yellow">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Open Findings</div>
+          <div class="kpi-value">{{ open_findings }}</div>
+          <div class="kpi-sub">Require immediate attention</div>
+        </div>
+        <div class="kpi-icon kpi-icon-yellow">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Critical Issues -->
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'critical_issues' %}" class="kpi-card kpi-card-red">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Critical Issues</div>
+          <div class="kpi-value">{{ critical_findings }}</div>
+          <div class="kpi-sub">High priority resolution needed</div>
+        </div>
+        <div class="kpi-icon kpi-icon-red">
+          <i class="bi bi-shield-exclamation"></i>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Overdue Items -->
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'overdue_items' %}" class="kpi-card kpi-card-dark">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Overdue Items</div>
+          <div class="kpi-value">{{ overdue_count }}</div>
+          <div class="kpi-sub">Past target closure date</div>
+        </div>
+        <div class="kpi-icon kpi-icon-dark">
+          <i class="bi bi-clock-history"></i>
+        </div>
+      </div>
+    </a>
+  </div>
+
+</div><!-- end KPI row -->
+
+<!-- Charts Row -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="chart-card h-100">
+      <div class="chart-card-title"><i class="bi bi-bar-chart me-2"></i>Audit Status Overview</div>
+      <div style="position:relative; height:320px; width:100%;">
+        <canvas id="chartAuditStatus"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="chart-card h-100">
+      <div class="chart-card-title"><i class="bi bi-pie-chart me-2"></i>Findings by Severity</div>
+      <div style="position:relative; height:320px; width:100%;">
+        <canvas id="chartSeverity"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Audits + Overdue Findings -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="content-card h-100">
+      <div class="content-card-header">
+        <h5><i class="bi bi-clock-history me-2"></i>Recent Audits</h5>
+        <a href="{% url 'audit_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="content-card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-modern table-hover mb-0">
+            <thead>
+              <tr>
+                <th class="ps-3">Audit</th>
+                <th>Department</th>
+                <th>Status</th>
+                <th>Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for audit in recent_audits %}
+              <tr>
+                <td class="ps-3">
+                  <a href="{% url 'audit_detail' audit.pk %}" class="text-decoration-none fw-semibold text-navy">
+                    {{ audit.title|truncatechars:35 }}
+                  </a>
+                </td>
+                <td><span class="text-muted">{{ audit.department.name }}</span></td>
+                <td><span class="status-badge status-{{ audit.status }}">{{ audit.get_status_display }}</span></td>
+                <td class="text-muted" style="font-size:0.8rem;">{{ audit.end_date|date:"M d, Y" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center py-3 text-muted">No audits yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="content-card h-100">
+      <div class="content-card-header">
+        <h5><i class="bi bi-exclamation-circle me-2 text-danger"></i>Overdue Findings</h5>
+        <span class="badge bg-danger rounded-pill">{{ overdue_count }}</span>
+      </div>
+      <div class="content-card-body p-0">
+        {% if overdue_findings %}
+        <div class="list-group list-group-flush">
+          {% for f in overdue_findings %}
+          <a href="{% url 'finding_detail' f.pk %}" class="list-group-item list-group-item-action px-3 py-2">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="fw-semibold" style="font-size:0.85rem;">{{ f.title|truncatechars:40 }}</div>
+                <div class="text-muted" style="font-size:0.75rem;">{{ f.audit.title|truncatechars:35 }}</div>
+              </div>
+              <span class="severity-badge severity-{{ f.severity }}">{{ f.get_severity_display }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state py-4">
+          <i class="bi bi-check-circle text-success"></i>
+          <p class="mt-2 mb-0">No overdue findings!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Department Chart -->
+<div class="row g-3">
+  <div class="col-12">
+    <div class="chart-card">
+      <div class="chart-card-title"><i class="bi bi-building me-2"></i>Audits Per Department</div>
+      <div style="position:relative; height:320px; width:100%;">
+        <canvas id="chartDepartment"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<!-- ── Auditee Dashboard ──────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <a href="{% url 'finding_list' %}?status=open" class="text-decoration-none kpi-card-link">
+      <div class="stat-card warning kpi-card" style="cursor:pointer;">
+        <div class="d-flex align-items-start justify-content-between">
+          <div>
+            <div class="stat-label">Open Findings</div>
+            <div class="stat-value">{{ open_findings_count }}</div>
+          </div>
+          <div class="stat-icon warning"><i class="bi bi-exclamation-triangle"></i></div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card info">
+      <div class="d-flex align-items-start justify-content-between">
+        <div>
+          <div class="stat-label">In Progress</div>
+          <div class="stat-value">{{ in_progress_count }}</div>
+        </div>
+        <div class="stat-icon info"><i class="bi bi-arrow-repeat"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <a href="{% url 'overdue_items' %}" class="text-decoration-none kpi-card-link">
+      <div class="stat-card danger kpi-card" style="cursor:pointer;">
+        <div class="d-flex align-items-start justify-content-between">
+          <div>
+            <div class="stat-label">Overdue Findings</div>
+            <div class="stat-value">{{ overdue_count }}</div>
+          </div>
+          <div class="stat-icon danger"><i class="bi bi-clock-history"></i></div>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="content-card">
+      <div class="content-card-header">
+        <h5><i class="bi bi-clipboard-data me-2"></i>My Department Audits</h5>
+        <a href="{% url 'audit_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="content-card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-modern table-hover mb-0">
+            <thead>
+              <tr>
+                <th class="ps-3">Audit</th>
+                <th>Status</th>
+                <th>Findings</th>
+                <th>Due Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for audit in my_audits %}
+              <tr>
+                <td class="ps-3">
+                  <a href="{% url 'audit_detail' audit.pk %}" class="text-decoration-none fw-semibold text-navy">
+                    {{ audit.title|truncatechars:40 }}
+                  </a>
+                </td>
+                <td><span class="status-badge status-{{ audit.status }}">{{ audit.get_status_display }}</span></td>
+                <td><span class="badge bg-secondary">{{ audit.findings_count }}</span></td>
+                <td class="text-muted" style="font-size:0.82rem;">{{ audit.end_date|date:"M d, Y" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center py-3 text-muted">No audits for your department yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="content-card">
+      <div class="content-card-header">
+        <h5><i class="bi bi-exclamation-circle me-2 text-danger"></i>My Overdue Findings</h5>
+      </div>
+      <div class="content-card-body p-0">
+        {% if overdue_findings %}
+        <div class="list-group list-group-flush">
+          {% for f in overdue_findings %}
+          <a href="{% url 'finding_detail' f.pk %}" class="list-group-item list-group-item-action px-3 py-2">
+            <div class="fw-semibold" style="font-size:0.84rem;">{{ f.title|truncatechars:38 }}</div>
+            <div class="d-flex align-items-center gap-2 mt-1">
+              <span class="severity-badge severity-{{ f.severity }}">{{ f.get_severity_display }}</span>
+              <span class="text-muted" style="font-size:0.72rem;">Due {{ f.target_closure_date|date:"M d" }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state py-4">
+          <i class="bi bi-check-circle text-success"></i>
+          <p class="mt-2 mb-0 text-muted" style="font-size:0.85rem;">No overdue findings!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if is_manager %}
+<script>
+(function() {
+  'use strict';
+
+  /* ── Data inlined directly from Django context ── */
+  var auditStatusLabels = ['Planned', 'Ongoing', 'Closed'];
+  var auditStatusValues = [{{ ctx_planned }}, {{ ctx_ongoing }}, {{ ctx_closed }}];
+
+  var severityLabels = ['Critical', 'High', 'Medium', 'Low'];
+  var severityValues = [{{ ctx_critical }}, {{ ctx_high }}, {{ ctx_medium }}, {{ ctx_low }}];
+
+  var deptLabels = [{% for label in ctx_dept_labels %}'{{ label }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+  var deptValues = [{% for val in ctx_dept_values %}{{ val }}{% if not forloop.last %},{% endif %}{% endfor %}];
+
+  /* ── Chart.js defaults ── */
+  Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+  Chart.defaults.color = '#64748b';
+
+  function initCharts() {
+
+    /* Chart 1 — Audit Status Bar */
+    var el1 = document.getElementById('chartAuditStatus');
+    if (el1) {
+      new Chart(el1, {
+        type: 'bar',
+        data: {
+          labels: auditStatusLabels,
+          datasets: [{
+            label: 'Audits',
+            data: auditStatusValues,
+            backgroundColor: ['rgba(99,102,241,0.85)','rgba(14,165,233,0.85)','rgba(34,197,94,0.85)'],
+            borderColor: ['#6366f1','#0ea5e9','#22c55e'],
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false,
+            barPercentage: 0.5,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              padding: 12,
+              callbacks: { label: function(ctx) { return '  ' + ctx.parsed.y + ' audit(s)'; } }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, precision: 0, color: '#94a3b8' },
+              grid: { color: 'rgba(148,163,184,0.15)' }
+            },
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+          },
+          animation: { duration: 900, easing: 'easeOutQuart' }
+        }
+      });
+    }
+
+    /* Chart 2 — Severity Doughnut */
+    var el2 = document.getElementById('chartSeverity');
+    if (el2) {
+      new Chart(el2, {
+        type: 'doughnut',
+        data: {
+          labels: severityLabels,
+          datasets: [{
+            data: severityValues,
+            backgroundColor: ['rgba(220,38,38,0.9)','rgba(234,88,12,0.9)','rgba(202,138,4,0.9)','rgba(22,163,74,0.9)'],
+            borderColor: ['#dc2626','#ea580c','#ca8a04','#16a34a'],
+            borderWidth: 2,
+            hoverOffset: 12,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12 } }
+            },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              padding: 12,
+              callbacks: {
+                label: function(ctx) {
+                  var total = ctx.dataset.data.reduce(function(a,b){return a+b;},0);
+                  var pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                  return '  ' + ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                }
+              }
+            }
+          },
+          animation: { duration: 1000, easing: 'easeOutQuart' }
+        }
+      });
+    }
+
+    /* Chart 3 — Audits Per Department Horizontal Bar */
+    var el3 = document.getElementById('chartDepartment');
+    if (el3) {
+      new Chart(el3, {
+        type: 'bar',
+        data: {
+          labels: deptLabels,
+          datasets: [{
+            label: 'Audits',
+            data: deptValues,
+            backgroundColor: 'rgba(37,99,235,0.8)',
+            borderColor: '#2563eb',
+            borderWidth: 2,
+            borderRadius: 6,
+            barPercentage: 0.55,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              padding: 12,
+              callbacks: { label: function(ctx) { return '  ' + ctx.parsed.x + ' audit(s)'; } }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, precision: 0, color: '#94a3b8' },
+              grid: { color: 'rgba(148,163,184,0.15)' }
+            },
+            y: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+          },
+          animation: { duration: 900, easing: 'easeOutQuart' }
+        }
+      });
+    }
+
+  } /* end initCharts */
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCharts);
+  } else {
+    initCharts();
+  }
+
+}());
+</script>
+{% endif %}
+{% endblock %}

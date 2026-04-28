@@ -1,0 +1,2825 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuditShield — Internal IT Audit Management System</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <style>
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:        #0a0e1a;
+  --bg2:       #0d1220;
+  --teal:      #00e5c8;
+  --teal-dim:  #00b4d8;
+  --blue:      #3b82f6;
+  --purple:    #7c3aed;
+  --text:      #f0f4ff;
+  --text-dim:  rgba(200,210,240,0.6);
+  --glass-bg:  rgba(255,255,255,0.04);
+  --glass-border: rgba(255,255,255,0.08);
+  --glow-teal: 0 0 60px rgba(0,229,200,0.25), 0 0 120px rgba(0,229,200,0.1);
+  --glow-blue: 0 0 40px rgba(59,130,246,0.3);
+  --radius:    16px;
+  --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── Dot Grid Background ──────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(
+    circle, rgba(255,255,255,0.07) 1px, transparent 1px
+  );
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Radial Glow Orbs ─────────────────────────────────────── */
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(80px);
+  opacity: 0.35;
+}
+
+.glow-orb-teal {
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, #00e5c8 0%, transparent 70%);
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.15;
+}
+
+.glow-orb-blue {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, #3b82f6 0%, transparent 70%);
+  top: 100px; right: -150px;
+  opacity: 0.12;
+}
+
+.glow-orb-purple {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, #7c3aed 0%, transparent 70%);
+  top: 200px; left: -100px;
+  opacity: 0.10;
+}
+
+/* ── Navbar ───────────────────────────────────────────────── */
+.navbar {
+  position: fixed;
+  top: 20px; left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  max-width: 1100px;
+  background: rgba(10,14,26,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1000;
+}
+
+.nav-brand {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+
+.nav-brand-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: #0a0e1a;
+}
+
+.nav-brand-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px; font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.nav-brand-text span { color: var(--teal); }
+
+.nav-links {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.nav-links a {
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.nav-links a:hover, .nav-links a.active {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+
+.nav-cta {
+  background: var(--teal);
+  color: #0a0e1a !important;
+  font-weight: 700 !important;
+  padding: 9px 22px !important;
+  border-radius: 999px !important;
+  font-size: 13.5px;
+  text-decoration: none;
+  transition: var(--transition);
+  box-shadow: 0 0 20px rgba(0,229,200,0.3);
+}
+
+.nav-cta:hover {
+  background: #00f0d4;
+  box-shadow: 0 0 30px rgba(0,229,200,0.5);
+  transform: translateY(-1px);
+}
+
+/* ── Sections ─────────────────────────────────────────────── */
+section {
+  position: relative;
+  z-index: 1;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Hero Section ─────────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Large central glow behind shield */
+.hero-glow-center {
+  position: absolute;
+  width: 800px; height: 800px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(0,229,200,0.18) 0%,
+    rgba(0,180,216,0.08) 35%,
+    transparent 70%
+  );
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.7; transform: translate(-50%,-50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%,-50%) scale(1.06); }
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,229,200,0.08);
+  border: 1px solid rgba(0,229,200,0.25);
+  border-radius: 999px;
+  padding: 7px 18px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--teal);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  animation: fadeSlideDown 0.6s ease both;
+}
+
+.hero-badge-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  animation: pulse-dot 1.5s ease infinite;
+}
+
+@keyframes pulse-dot {
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:0.5;transform:scale(1.5);}
+}
+
+.hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(42px, 6vw, 76px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -2px;
+  color: var(--text);
+  margin-bottom: 24px;
+  animation: fadeSlideDown 0.7s ease 0.1s both;
+}
+
+.hero h1 .glow-word {
+  color: var(--teal);
+  text-shadow: 0 0 40px rgba(0,229,200,0.5);
+}
+
+.hero p {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-dim);
+  max-width: 560px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+  animation: fadeSlideDown 0.7s ease 0.2s both;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 70px;
+  animation: fadeSlideDown 0.7s ease 0.3s both;
+}
+
+.btn-primary-glow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dim) 100%);
+  color: #0a0e1a;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 32px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: var(--transition);
+  box-shadow: 0 0 30px rgba(0,229,200,0.35), 0 4px 20px rgba(0,0,0,0.3);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.btn-primary-glow:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 50px rgba(0,229,200,0.55), 0 8px 30px rgba(0,0,0,0.4);
+  color: #0a0e1a;
+}
+
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 13px 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.15);
+  text-decoration: none;
+  transition: var(--transition);
+  font-family: 'DM Sans', sans-serif;
+  backdrop-filter: blur(8px);
+}
+
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.25);
+  transform: translateY(-2px);
+  color: var(--text);
+}
+
+/* ── Hero Shield 3D Visual ────────────────────────────────── */
+.hero-visual {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  animation: fadeSlideDown 0.8s ease 0.4s both;
+}
+
+/* Central glowing shield box */
+.shield-box {
+  width: 220px; height: 220px;
+  margin: 0 auto;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.shield-hex {
+  width: 180px; height: 180px;
+  background: linear-gradient(135deg,
+    rgba(0,229,200,0.12) 0%,
+    rgba(0,180,216,0.06) 100%
+  );
+  border: 1.5px solid rgba(0,229,200,0.35);
+  border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  box-shadow:
+    0 0 60px rgba(0,229,200,0.2),
+    inset 0 0 40px rgba(0,229,200,0.05);
+  backdrop-filter: blur(20px);
+  transform: rotate(8deg);
+  animation: shield-float 3s ease-in-out infinite;
+}
+
+@keyframes shield-float {
+  0%,100%{transform:rotate(8deg) translateY(0);}
+  50%{transform:rotate(8deg) translateY(-12px);}
+}
+
+.shield-hex i {
+  font-size: 72px;
+  color: var(--teal);
+  text-shadow: 0 0 40px rgba(0,229,200,0.7);
+  transform: rotate(-8deg);
+}
+
+/* Glow ring around shield */
+.shield-ring {
+  position: absolute;
+  inset: -20px;
+  border-radius: 36px;
+  border: 1px solid rgba(0,229,200,0.12);
+  animation: ring-pulse 2.5s ease-in-out infinite;
+}
+
+.shield-ring-2 {
+  position: absolute;
+  inset: -40px;
+  border-radius: 48px;
+  border: 1px solid rgba(0,229,200,0.06);
+  animation: ring-pulse 2.5s ease-in-out 0.5s infinite;
+}
+
+@keyframes ring-pulse {
+  0%,100%{opacity:0.6;transform:scale(1);}
+  50%{opacity:1;transform:scale(1.03);}
+}
+
+/* Floating stat cards around the shield */
+.float-cards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.float-card {
+  position: absolute;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 14px 18px;
+  backdrop-filter: blur(20px);
+  min-width: 160px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  pointer-events: auto;
+  animation: card-float 4s ease-in-out infinite;
+}
+
+.float-card:nth-child(1) { top: 5%; left: -10px; animation-delay: 0s; }
+.float-card:nth-child(2) { top: 5%; right: -10px; animation-delay: 0.8s; }
+.float-card:nth-child(3) { bottom: 5%; left: 0px; animation-delay: 1.6s; }
+.float-card:nth-child(4) { bottom: 5%; right: 0px; animation-delay: 2.4s; }
+
+@keyframes card-float {
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-8px);}
+}
+
+.float-card-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.float-card-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.float-card-sub {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.float-card-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.icon-teal { background: rgba(0,229,200,0.15); color: var(--teal); }
+.icon-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.icon-red  { background: rgba(239,68,68,0.15); color: #f87171; }
+.icon-amber{ background: rgba(245,158,11,0.15); color: #fbbf24; }
+
+/* ── Section Shared ───────────────────────────────────────── */
+.section-label {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--teal);
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.1;
+}
+
+.section-desc {
+  font-size: 16px;
+  color: var(--text-dim);
+  max-width: 540px;
+  line-height: 1.7;
+}
+
+/* ── Value Highlights Section ─────────────────────────────── */
+.highlights {
+  padding: 100px 0;
+}
+
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-top: 52px;
+}
+
+.highlight-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.highlight-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--teal), var(--blue));
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.highlight-card:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(0,229,200,0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.3), 0 0 20px rgba(0,229,200,0.05);
+}
+
+.highlight-card:hover::before { opacity: 1; }
+
+.highlight-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  background: rgba(0,229,200,0.1);
+  border: 1px solid rgba(0,229,200,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  color: var(--teal);
+  margin-bottom: 18px;
+  transition: var(--transition);
+}
+
+.highlight-card:hover .highlight-icon {
+  background: rgba(0,229,200,0.18);
+  box-shadow: 0 0 20px rgba(0,229,200,0.2);
+}
+
+.highlight-card h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  letter-spacing: -0.2px;
+}
+
+.highlight-card p {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+
+/* ── Features Section ─────────────────────────────────────── */
+.features {
+  padding: 100px 0;
+  position: relative;
+}
+
+.features::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%,-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 52px;
+}
+
+.feature-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; right: -60px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,200,0.08) 0%, transparent 70%);
+  transition: var(--transition);
+}
+
+.feature-card:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(0,229,200,0.18);
+  transform: translateY(-5px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+}
+
+.feature-card:hover::after {
+  transform: scale(2);
+  opacity: 0.5;
+}
+
+.feature-number {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(0,229,200,0.4);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.feature-icon-wrap {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  margin-bottom: 18px;
+}
+
+.feature-card h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  letter-spacing: -0.2px;
+}
+
+.feature-card p {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+/* ── How It Works ─────────────────────────────────────────── */
+.how-it-works {
+  padding: 100px 0;
+}
+
+.steps-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  margin-top: 56px;
+  position: relative;
+}
+
+/* connecting line between steps */
+.steps-row::before {
+  content: '';
+  position: absolute;
+  top: 40px; left: 10%;
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0,229,200,0.3) 20%,
+    rgba(0,229,200,0.3) 80%,
+    transparent
+  );
+}
+
+.step {
+  text-align: center;
+  padding: 0 20px;
+  position: relative;
+}
+
+.step-number {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: rgba(0,229,200,0.07);
+  border: 1.5px solid rgba(0,229,200,0.25);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 24px;
+  position: relative;
+  transition: var(--transition);
+}
+
+.step:hover .step-number {
+  background: rgba(0,229,200,0.15);
+  border-color: rgba(0,229,200,0.5);
+  box-shadow: 0 0 30px rgba(0,229,200,0.2);
+}
+
+.step-number i {
+  font-size: 28px;
+  color: var(--teal);
+}
+
+.step-index {
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 22px; height: 22px;
+  background: var(--teal);
+  color: #0a0e1a;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.step h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.step p {
+  font-size: 13.5px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+/* ── CTA Section ──────────────────────────────────────────── */
+.cta-section {
+  padding: 100px 0 120px;
+  text-align: center;
+  position: relative;
+}
+
+.cta-box {
+  background: linear-gradient(135deg,
+    rgba(0,229,200,0.06) 0%,
+    rgba(59,130,246,0.06) 100%
+  );
+  border: 1px solid rgba(0,229,200,0.15);
+  border-radius: 24px;
+  padding: 72px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-box::before {
+  content: '';
+  position: absolute;
+  top: -100px; left: 50%;
+  transform: translateX(-50%);
+  width: 500px; height: 300px;
+  background: radial-gradient(ellipse, rgba(0,229,200,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.cta-box h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(28px, 4vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.15;
+}
+
+.cta-box h2 span { color: var(--teal); }
+
+.cta-box p {
+  font-size: 17px;
+  color: var(--text-dim);
+  margin-bottom: 40px;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── Footer ───────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--glass-border);
+  padding: 28px 0;
+  text-align: center;
+}
+
+footer p {
+  font-size: 13px;
+  color: rgba(200,210,240,0.35);
+}
+
+footer span { color: var(--teal); }
+
+/* ── Scroll Reveal Animation ──────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+@keyframes fadeSlideDown {
+  from { opacity:0; transform:translateY(-20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .navbar { padding: 12px 20px; }
+  .float-card:nth-child(1),
+  .float-card:nth-child(2) { display: none; }
+  .float-card:nth-child(3),
+  .float-card:nth-child(4) { position: static; margin: 8px; }
+  .float-cards { position: static; display: flex; flex-wrap: wrap; justify-content: center; }
+  .steps-row::before { display: none; }
+  .hero h1 { letter-spacing: -1px; }
+  .cta-box { padding: 48px 24px; }
+}
+
+/* ════════════════════════════════════════════════════════
+   AUDITSHIELD CHATBOT — Premium Glow UI
+   Matches landing page: #0a0e1a bg, #00e5c8 teal accent
+   ════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ─────────────────────────────────────── */
+@keyframes cb-pulse-ring {
+  0%   { transform:scale(1);   opacity:0.6; }
+  70%  { transform:scale(1.6); opacity:0;   }
+  100% { transform:scale(1.6); opacity:0;   }
+}
+
+@keyframes cb-float-btn {
+  0%,100% { transform:translateY(0);  }
+  50%     { transform:translateY(-5px); }
+}
+
+@keyframes cb-slide-up {
+  from { opacity:0; transform:translateY(24px) scale(0.96); }
+  to   { opacity:1; transform:translateY(0)    scale(1);    }
+}
+
+@keyframes cb-fade-in {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0);   }
+}
+
+@keyframes cb-typing-dot {
+  0%,60%,100% { transform:translateY(0);    opacity:0.4; }
+  30%          { transform:translateY(-6px); opacity:1;   }
+}
+
+@keyframes cb-glow-pulse {
+  0%,100% { box-shadow:0 0 20px rgba(0,229,200,0.3),
+                        0 0 40px rgba(0,229,200,0.1); }
+  50%     { box-shadow:0 0 30px rgba(0,229,200,0.5),
+                        0 0 60px rgba(0,229,200,0.2); }
+}
+
+@keyframes cb-online-blink {
+  0%,100% { opacity:1; }
+  50%     { opacity:0.4; }
+}
+
+/* ── Trigger Button ────────────────────────────────── */
+.cb-trigger {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00e5c8 0%, #00b4d8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9998;
+  box-shadow: 0 0 28px rgba(0,229,200,0.45),
+              0 8px 24px rgba(0,0,0,0.4);
+  animation: cb-float-btn 3s ease-in-out infinite,
+             cb-glow-pulse 2.5s ease-in-out infinite;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+}
+
+.cb-trigger:hover {
+  transform: translateY(-4px) scale(1.06);
+  box-shadow: 0 0 40px rgba(0,229,200,0.65),
+              0 12px 32px rgba(0,0,0,0.5);
+  animation: cb-glow-pulse 2.5s ease-in-out infinite;
+}
+
+.cb-trigger:focus-visible {
+  outline: 2px solid #00e5c8;
+  outline-offset: 4px;
+}
+
+/* Pulse rings */
+.cb-trigger-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(0,229,200,0.6);
+  animation: cb-pulse-ring 2.2s ease-out infinite;
+  pointer-events: none;
+}
+
+.cb-trigger-ring-2 {
+  animation-delay: 0.8s;
+}
+
+/* Icon container */
+.cb-trigger-icon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a0e1a;
+}
+
+.cb-trigger-icon .bi {
+  font-size: 24px;
+  color: #0a0e1a;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+/* Unread dot */
+.cb-unread {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid #0a0e1a;
+  display: none;
+}
+
+.cb-unread.visible { display: block; }
+
+/* Hide trigger when panel open */
+.cb-trigger.cb-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* ── Chat Panel ────────────────────────────────────── */
+.cb-panel {
+  position: fixed;
+  bottom: 100px;
+  right: 28px;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  height: 560px;
+  max-height: calc(100vh - 120px);
+  background: rgba(10,14,26,0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0,229,200,0.2);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  z-index: 9999;
+  box-shadow: 0 0 0 1px rgba(0,229,200,0.06),
+              0 0 40px rgba(0,229,200,0.12),
+              0 24px 60px rgba(0,0,0,0.6),
+              inset 0 1px 0 rgba(255,255,255,0.06);
+  overflow: hidden;
+  /* Hidden by default */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(24px) scale(0.96);
+  transition: opacity 0.28s cubic-bezier(0.4,0,0.2,1),
+              transform 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
+.cb-panel.cb-open {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0) scale(1);
+  animation: cb-slide-up 0.28s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+/* Glow border animation on open */
+.cb-panel.cb-open {
+  border-color: rgba(0,229,200,0.25);
+}
+
+/* ── Header ────────────────────────────────────────── */
+.cb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(90deg,
+    rgba(0,229,200,0.06) 0%,
+    rgba(0,180,216,0.03) 100%);
+  flex-shrink: 0;
+}
+
+.cb-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cb-header-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,
+    rgba(0,229,200,0.2) 0%,
+    rgba(0,180,216,0.1) 100%);
+  border: 1.5px solid rgba(0,229,200,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 0 16px rgba(0,229,200,0.2);
+  flex-shrink: 0;
+}
+
+.cb-header-avatar .bi {
+  font-size: 18px;
+  color: #00e5c8;
+  filter: drop-shadow(0 0 6px rgba(0,229,200,0.6));
+}
+
+.cb-online-dot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border-radius: 50%;
+  border: 2px solid #0a0e1a;
+  animation: cb-online-blink 2s ease-in-out infinite;
+}
+
+.cb-header-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+
+.cb-header-sub {
+  font-size: 11.5px;
+  color: rgba(200,220,240,0.5);
+  margin-top: 2px;
+}
+
+.cb-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(200,220,240,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.cb-close-btn:hover {
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.25);
+  color: #fca5a5;
+}
+
+/* ── Messages Area ─────────────────────────────────── */
+.cb-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+
+.cb-messages::-webkit-scrollbar { width: 3px; }
+.cb-messages::-webkit-scrollbar-track { background: transparent; }
+.cb-messages::-webkit-scrollbar-thumb {
+  background: rgba(0,229,200,0.2);
+  border-radius: 999px;
+}
+
+/* ── Message Bubbles ───────────────────────────────── */
+.cb-msg {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  animation: cb-fade-in 0.25s ease both;
+}
+
+/* Bot message — left aligned */
+.cb-msg-bot {
+  flex-direction: row;
+}
+
+/* User message — right aligned */
+.cb-msg-user {
+  flex-direction: row-reverse;
+}
+
+.cb-msg-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0,229,200,0.1);
+  border: 1px solid rgba(0,229,200,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cb-msg-avatar .bi {
+  font-size: 14px;
+  color: #00e5c8;
+}
+
+/* Bot bubble */
+.cb-msg-bot .cb-msg-bubble {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(0,229,200,0.12);
+  border-radius: 16px 16px 16px 4px;
+  padding: 12px 14px;
+  max-width: 82%;
+  color: rgba(220,235,255,0.88);
+  font-size: 13.5px;
+  line-height: 1.6;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2),
+              inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.cb-msg-bot .cb-msg-bubble strong {
+  color: #00e5c8;
+  font-weight: 600;
+}
+
+/* User bubble */
+.cb-msg-user .cb-msg-bubble {
+  background: linear-gradient(135deg,
+    rgba(0,229,200,0.18) 0%,
+    rgba(0,180,216,0.12) 100%);
+  border: 1px solid rgba(0,229,200,0.25);
+  border-radius: 16px 16px 4px 16px;
+  padding: 12px 14px;
+  max-width: 82%;
+  color: rgba(220,240,255,0.95);
+  font-size: 13.5px;
+  line-height: 1.6;
+  text-align: right;
+  box-shadow: 0 0 16px rgba(0,229,200,0.08);
+}
+
+/* User avatar circle */
+.cb-msg-user .cb-msg-avatar {
+  background: rgba(0,229,200,0.15);
+  border-color: rgba(0,229,200,0.3);
+}
+
+/* Quick-reply tags */
+.cb-quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.cb-tag {
+  background: rgba(0,229,200,0.07);
+  border: 1px solid rgba(0,229,200,0.2);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: #00e5c8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+
+.cb-tag:hover {
+  background: rgba(0,229,200,0.14);
+  border-color: rgba(0,229,200,0.4);
+  box-shadow: 0 0 10px rgba(0,229,200,0.15);
+  transform: translateY(-1px);
+}
+
+/* ── Typing Indicator ──────────────────────────────── */
+.cb-typing {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 16px 8px;
+  flex-shrink: 0;
+}
+
+.cb-typing.visible { display: flex; }
+
+.cb-typing-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(0,229,200,0.1);
+  border-radius: 999px;
+  padding: 8px 14px;
+}
+
+.cb-typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(0,229,200,0.6);
+  display: inline-block;
+}
+
+.cb-typing-dots span:nth-child(1) {
+  animation: cb-typing-dot 1s ease-in-out 0s   infinite;
+}
+.cb-typing-dots span:nth-child(2) {
+  animation: cb-typing-dot 1s ease-in-out 0.2s infinite;
+}
+.cb-typing-dots span:nth-child(3) {
+  animation: cb-typing-dot 1s ease-in-out 0.4s infinite;
+}
+
+/* ── Input Area ────────────────────────────────────── */
+.cb-input-area {
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+
+.cb-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 6px 6px 6px 14px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.cb-input-wrap:focus-within {
+  border-color: rgba(0,229,200,0.45);
+  box-shadow: 0 0 0 3px rgba(0,229,200,0.08),
+              0 0 16px rgba(0,229,200,0.12);
+}
+
+.cb-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(220,235,255,0.9);
+  font-size: 13.5px;
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.5;
+  caret-color: #00e5c8;
+}
+
+.cb-input::placeholder {
+  color: rgba(180,200,230,0.3);
+}
+
+.cb-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #00e5c8, #00b4d8);
+  border: none;
+  color: #0a0e1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  box-shadow: 0 0 14px rgba(0,229,200,0.3);
+}
+
+.cb-send-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 22px rgba(0,229,200,0.5);
+}
+
+.cb-send-btn:active {
+  transform: scale(0.96);
+}
+
+.cb-send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cb-input-hint {
+  font-size: 10.5px;
+  color: rgba(180,200,230,0.25);
+  text-align: center;
+  margin-top: 8px;
+  letter-spacing: 0.2px;
+}
+
+/* ── Backdrop (mobile) ─────────────────────────────── */
+.cb-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9997;
+  backdrop-filter: blur(2px);
+}
+
+.cb-backdrop.visible { display: block; }
+
+/* ── Responsive ────────────────────────────────────── */
+@media (max-width: 480px) {
+  .cb-panel {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 85vh;
+    max-height: 85vh;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+  }
+
+  .cb-trigger {
+    bottom: 20px;
+    right: 20px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   END CHATBOT CSS
+   ════════════════════════════════════════════════════════ */
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ────────────────────────────────────────────── -->
+<nav class="navbar">
+  <a href="#" class="nav-brand">
+    <div class="nav-brand-icon">
+      <i class="bi bi-shield-check"></i>
+    </div>
+    <span class="nav-brand-text">Audit<span>Shield</span></span>
+  </a>
+
+  <div class="nav-links">
+    <a href="#" class="active">Home</a>
+    <a href="#highlights">Why Us</a>
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How It Works</a>
+  </div>
+
+  <a href="{% url 'login' %}" class="nav-cta">
+    <i class="bi bi-arrow-right-circle"></i> Get Started
+  </a>
+</nav>
+
+<!-- ── SECTION 1: HERO ───────────────────────────────────── -->
+<section class="hero">
+  <!-- Background glow orbs -->
+  <div class="glow-orb glow-orb-teal"></div>
+  <div class="glow-orb glow-orb-blue"></div>
+  <div class="glow-orb glow-orb-purple"></div>
+
+  <!-- Central radial glow -->
+  <div class="hero-glow-center"></div>
+
+  <div class="container" style="position:relative;z-index:1;">
+
+    <!-- Badge -->
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Enterprise IT Audit Management Platform
+    </div>
+
+    <!-- Headline -->
+    <h1>
+      Transform Your<br>
+      <span class="glow-word">Audit Compliance</span><br>
+      Into Clarity
+    </h1>
+
+    <!-- Subline -->
+    <p>
+      AuditShield centralizes your entire IT audit lifecycle — from planning
+      and findings to corrective actions and final reports — in one
+      intelligent, role-aware platform.
+    </p>
+
+    <!-- Buttons -->
+    <div class="hero-buttons">
+      <a href="{% url 'login' %}" class="btn-primary-glow">
+        <i class="bi bi-shield-lock"></i> Get Started Free
+      </a>
+      <a href="#how-it-works" class="btn-ghost">
+        <i class="bi bi-play-circle"></i> See How It Works
+      </a>
+    </div>
+
+    <!-- Hero Visual: Shield + Floating Cards -->
+    <div class="hero-visual">
+      <div class="shield-box">
+        <!-- Glow rings -->
+        <div class="shield-ring"></div>
+        <div class="shield-ring-2"></div>
+        <!-- Shield -->
+        <div class="shield-hex">
+          <i class="bi bi-shield-check"></i>
+        </div>
+      </div>
+
+      <!-- Floating stat cards -->
+      <div class="float-cards">
+        <!-- Card 1: Top Left -->
+        <div class="float-card">
+          <div class="float-card-icon icon-red">
+            <i class="bi bi-exclamation-triangle"></i>
+          </div>
+          <div class="float-card-label">Critical Findings</div>
+          <div class="float-card-value">Active</div>
+          <div class="float-card-sub">Real-time severity tracking</div>
+        </div>
+
+        <!-- Card 2: Top Right -->
+        <div class="float-card">
+          <div class="float-card-icon icon-teal">
+            <i class="bi bi-clipboard-check"></i>
+          </div>
+          <div class="float-card-label">Audit Coverage</div>
+          <div class="float-card-value">360°</div>
+          <div class="float-card-sub">Full lifecycle managed</div>
+        </div>
+
+        <!-- Card 3: Bottom Left -->
+        <div class="float-card">
+          <div class="float-card-icon icon-blue">
+            <i class="bi bi-file-earmark-pdf"></i>
+          </div>
+          <div class="float-card-label">Auto Reports</div>
+          <div class="float-card-value">PDF Ready</div>
+          <div class="float-card-sub">One-click generation</div>
+        </div>
+
+        <!-- Card 4: Bottom Right -->
+        <div class="float-card">
+          <div class="float-card-icon icon-amber">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <div class="float-card-label">Overdue Alerts</div>
+          <div class="float-card-value">Live</div>
+          <div class="float-card-sub">Instant overdue detection</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── SECTION 2: VALUE HIGHLIGHTS ───────────────────────── -->
+<section class="highlights" id="highlights">
+  <div class="container">
+    <div class="reveal" style="text-align:center; margin-bottom:8px;">
+      <span class="section-label">Why AuditShield</span>
+    </div>
+    <div class="reveal" style="text-align:center;">
+      <h2 class="section-title">Built for Audit Teams<br>That Demand Clarity</h2>
+    </div>
+    <div class="reveal" style="text-align:center; display:flex; justify-content:center;">
+      <p class="section-desc">
+        Move beyond spreadsheets and email chains. AuditShield gives your
+        team a single source of truth for every audit, every finding,
+        and every action.
+      </p>
+    </div>
+
+    <div class="highlights-grid">
+
+      <div class="highlight-card reveal reveal-delay-1">
+        <div class="highlight-icon">
+          <i class="bi bi-grid-3x3-gap-fill"></i>
+        </div>
+        <h3>Centralized Audit Management</h3>
+        <p>Manage all audits in a single platform instead of scattered
+        tools, emails, and spreadsheets. Every stakeholder sees the
+        same real-time picture.</p>
+      </div>
+
+      <div class="highlight-card reveal reveal-delay-2">
+        <div class="highlight-icon" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2);color:#f87171;">
+          <i class="bi bi-radar"></i>
+        </div>
+        <h3>Risk Visibility &amp; Prioritization</h3>
+        <p>Identify and focus on high-risk findings using four-tier
+        severity classification — Critical, High, Medium, and Low —
+        so teams act on what matters most first.</p>
+      </div>
+
+      <div class="highlight-card reveal reveal-delay-3">
+        <div class="highlight-icon" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.2);color:#fbbf24;">
+          <i class="bi bi-activity"></i>
+        </div>
+        <h3>Real-Time Compliance Tracking</h3>
+        <p>Monitor the progress of corrective actions and overdue issues
+        live. Automated overdue detection ensures nothing slips through
+        the cracks.</p>
+      </div>
+
+      <div class="highlight-card reveal reveal-delay-4">
+        <div class="highlight-icon" style="background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.2);color:#a78bfa;">
+          <i class="bi bi-person-check-fill"></i>
+        </div>
+        <h3>Improved Accountability</h3>
+        <p>Ensure clear ownership and full traceability of every audit
+        activity. Role-based access keeps Audit Managers and Auditee
+        Heads precisely informed.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── SECTION 3: CORE FEATURES ──────────────────────────── -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="reveal" style="text-align:center;">
+      <span class="section-label">Core Features</span>
+      <h2 class="section-title" style="margin-top:8px;">
+        Everything Your Audit<br>Team Needs
+      </h2>
+    </div>
+
+    <div class="features-grid" style="margin-top:52px;">
+
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-number">01</div>
+        <div class="feature-icon-wrap" style="background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.2);">
+          <i class="bi bi-clipboard2-data" style="color:var(--teal);font-size:24px;"></i>
+        </div>
+        <h3>Audit Lifecycle Management</h3>
+        <p>Plan, schedule, and track audits from inception to closure.
+        Assign departments and auditors, set timelines, and monitor
+        status across Planned, Ongoing, and Closed stages — all
+        in one dashboard.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-number">02</div>
+        <div class="feature-icon-wrap" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);">
+          <i class="bi bi-shield-exclamation" style="color:#f87171;font-size:24px;"></i>
+        </div>
+        <h3>Risk-Based Findings Tracking</h3>
+        <p>Log findings with full severity classification, detailed
+        descriptions, and targeted recommendations. Auditee Heads
+        respond, update status, and close issues directly in the
+        platform.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-number">03</div>
+        <div class="feature-icon-wrap" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);">
+          <i class="bi bi-alarm-fill" style="color:#fbbf24;font-size:24px;"></i>
+        </div>
+        <h3>Overdue Compliance Monitoring</h3>
+        <p>Automatically detect findings and audits that have passed
+        their target dates. Real-time overdue alerts and a dedicated
+        overdue dashboard keep teams accountable without manual follow-up.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-4">
+        <div class="feature-number">04</div>
+        <div class="feature-icon-wrap" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);">
+          <i class="bi bi-file-earmark-pdf-fill" style="color:#60a5fa;font-size:24px;"></i>
+        </div>
+        <h3>Automated Audit Report Generation</h3>
+        <p>Generate comprehensive PDF audit reports with one click when
+        an audit is closed. Reports include audit details, all findings,
+        severity breakdowns, recommendations, and a closure summary.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── SECTION 4: HOW IT WORKS ───────────────────────────── -->
+<section class="how-it-works" id="how-it-works">
+  <div class="container">
+    <div class="reveal" style="text-align:center;">
+      <span class="section-label">Process</span>
+      <h2 class="section-title" style="margin-top:8px;">How AuditShield Works</h2>
+      <p class="section-desc" style="margin:0 auto 0;">
+        A streamlined four-step workflow that takes your audit from
+        initiation to a professional final report.
+      </p>
+    </div>
+
+    <div class="steps-row reveal" style="margin-top:56px;">
+
+      <div class="step">
+        <div class="step-number">
+          <i class="bi bi-plus-circle-fill"></i>
+          <span class="step-index">1</span>
+        </div>
+        <h3>Create Audit</h3>
+        <p>Define the audit title, scope, department, auditor, and
+        timeline. Schedule it for a specific period.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">
+          <i class="bi bi-journal-text"></i>
+          <span class="step-index">2</span>
+        </div>
+        <h3>Record Findings</h3>
+        <p>Log all identified issues with severity level, description,
+        and actionable recommendations.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">
+          <i class="bi bi-arrow-repeat"></i>
+          <span class="step-index">3</span>
+        </div>
+        <h3>Track Corrective Actions</h3>
+        <p>Auditee teams respond, update progress, and close findings
+        as corrective actions are completed.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">
+          <i class="bi bi-file-earmark-check-fill"></i>
+          <span class="step-index">4</span>
+        </div>
+        <h3>Generate Final Report</h3>
+        <p>Close the audit and instantly download a professional PDF
+        report containing the complete audit record.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── SECTION 5: CALL TO ACTION ─────────────────────────── -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box reveal">
+      <h2>
+        Ready to Elevate Your<br>
+        <span>Audit Operations?</span>
+      </h2>
+      <p>
+        Join organizations that have replaced fragmented audit processes
+        with AuditShield's centralized, intelligent audit management system.
+      </p>
+      <a href="{% url 'login' %}" class="btn-primary-glow" style="font-size:16px; padding:16px 40px;">
+        <i class="bi bi-shield-lock-fill"></i> Get Started Now
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <p>
+      © 2025 <span>AuditShield</span> — Internal IT Audit Management System.
+      Built for enterprise compliance teams.
+    </p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Intersection Observer for scroll reveal ── */
+  var revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    revealEls.forEach(function (el) { observer.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add('visible'); });
+  }
+
+  /* ── Active nav link on scroll ── */
+  var sections = document.querySelectorAll('section[id]');
+  var navLinks = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', function () {
+    var scrollY = window.scrollY;
+    sections.forEach(function (section) {
+      var top = section.offsetTop - 100;
+      var height = section.offsetHeight;
+      var id = section.getAttribute('id');
+      if (scrollY >= top && scrollY < top + height) {
+        navLinks.forEach(function (link) {
+          link.classList.remove('active');
+          if (link.getAttribute('href') === '#' + id) {
+            link.classList.add('active');
+          }
+        });
+      }
+    });
+  }, { passive: true });
+
+  /* ── Smooth navbar background on scroll ── */
+  var navbar = document.querySelector('.navbar');
+  window.addEventListener('scroll', function () {
+    if (window.scrollY > 40) {
+      navbar.style.background = 'rgba(10,14,26,0.92)';
+    } else {
+      navbar.style.background = 'rgba(10,14,26,0.7)';
+    }
+  }, { passive: true });
+
+}());
+</script>
+
+<!-- ═══ AUDITSHIELD CHATBOT ASSISTANT ══════════════════════════════════ -->
+
+<!-- Floating trigger button -->
+<div class="cb-trigger" id="cbTrigger" onclick="cbToggle()"
+     aria-label="Open Audit Assistant" role="button" tabindex="0">
+  <div class="cb-trigger-ring"></div>
+  <div class="cb-trigger-ring cb-trigger-ring-2"></div>
+  <div class="cb-trigger-icon">
+    <i style="font-size:22px; color:#0a0e1a;"
+       class="bi bi-shield-check"></i>
+  </div>
+  <!-- Unread dot (hidden by default) -->
+  <span class="cb-unread" id="cbUnread"></span>
+</div>
+
+<!-- Chatbot panel -->
+<div class="cb-panel" id="cbPanel" role="dialog"
+     aria-modal="true" aria-label="Audit Assistant">
+
+  <!-- Header -->
+  <div class="cb-header">
+    <div class="cb-header-left">
+      <div class="cb-header-avatar">
+        <i class="bi bi-shield-check"></i>
+        <span class="cb-online-dot"></span>
+      </div>
+      <div class="cb-header-info">
+        <div class="cb-header-title">Audit Assistant</div>
+        <div class="cb-header-sub">Ask about audits &amp; compliance</div>
+      </div>
+    </div>
+    <button class="cb-close-btn" onclick="cbToggle()"
+            aria-label="Close chat">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <!-- Messages area -->
+  <div class="cb-messages" id="cbMessages">
+
+    <!-- Welcome message (always shown first) -->
+    <div class="cb-msg cb-msg-bot">
+      <div class="cb-msg-avatar">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <div class="cb-msg-bubble">
+        <p>Hi! I'm the <strong>AuditShield Assistant</strong>. 👋</p>
+        <p style="margin-top:6px;">I can help you with:</p>
+        <div class="cb-quick-tags">
+          <button class="cb-tag" onclick="cbQuick('What is AuditShield?')">
+            What is AuditShield?
+          </button>
+          <button class="cb-tag" onclick="cbQuick('How do I create an audit?')">
+            How to create an audit?
+          </button>
+          <button class="cb-tag" onclick="cbQuick('What are findings?')">
+            What are findings?
+          </button>
+          <button class="cb-tag"
+                  onclick="cbQuick('How does PDF report work?')">
+            PDF reports?
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Typing indicator (hidden by default) -->
+  <div class="cb-typing" id="cbTyping">
+    <div class="cb-msg-avatar" style="flex-shrink:0;">
+      <i class="bi bi-shield-check"></i>
+    </div>
+    <div class="cb-typing-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <!-- Input area -->
+  <div class="cb-input-area">
+    <div class="cb-input-wrap">
+      <input type="text" class="cb-input" id="cbInput"
+             placeholder="Ask about audits, compliance..."
+             maxlength="300"
+             onkeydown="if(event.key==='Enter')cbSend()"
+             autocomplete="off" />
+      <button class="cb-send-btn" id="cbSendBtn"
+              onclick="cbSend()" aria-label="Send message">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </div>
+    <div class="cb-input-hint">
+      Powered by AuditShield &middot; Audit &amp; Compliance AI
+    </div>
+  </div>
+
+</div>
+
+<!-- Backdrop (mobile) -->
+<div class="cb-backdrop" id="cbBackdrop" onclick="cbToggle()"></div>
+
+<!-- ═══ END CHATBOT ══════════════════════════════════════════════════════ -->
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════
+   AUDITSHIELD CHATBOT + VOICE ASSISTANT — v3.0
+   Intent-based + fuzzy + context-aware + suggestion system + voice
+   Pure JavaScript. No external APIs. No ML models.
+   ════════════════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 1 — STATE
+     ══════════════════════════════════════════════════════════════════════ */
+  var isOpen       = false;
+  var isTyping     = false;
+  var turnCount    = 0;
+  var fallbackIdx  = 0;
+  var lastIntentId = null;   /* context tracking */
+  var lastCategory = null;   /* category tracking for follow-ups */
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 2 — DOM REFERENCES
+     ══════════════════════════════════════════════════════════════════════ */
+  var panel    = document.getElementById("cbPanel");
+  var trigger  = document.getElementById("cbTrigger");
+  var messages = document.getElementById("cbMessages");
+  var inp      = document.getElementById("cbInput");
+  var sendBtn  = document.getElementById("cbSendBtn");
+  var typingEl = document.getElementById("cbTyping");
+  var unread   = document.getElementById("cbUnread");
+  var backdrop = document.getElementById("cbBackdrop");
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 3 — SYNONYM DICTIONARY (expanded)
+     ══════════════════════════════════════════════════════════════════════ */
+  var SYN = {
+    /* audit variants */
+    "auditing":"audit","audited":"audit","audits":"audit",
+    "inspection":"audit","review":"audit","examination":"audit",
+    "assessment":"audit","evaluation":"audit","check":"audit",
+    "audit check":"audit","it audit":"audit","internal audit":"audit",
+
+    /* finding variants */
+    "findings":"finding","issue":"finding","issues":"finding",
+    "problem":"finding","problems":"finding","observation":"finding",
+    "observations":"finding","gap":"finding","gaps":"finding",
+    "vulnerability":"finding","vulnerabilities":"finding",
+    "deficiency":"finding","deficiencies":"finding","concern":"finding",
+    "anomaly":"finding","anomalies":"finding",
+
+    /* report variants */
+    "reports":"report","pdf":"report","document":"report",
+    "documentation":"report","download":"report","export":"report",
+    "generate":"report","final report":"report","audit report":"report",
+
+    /* resolve/fix variants */
+    "fix":"resolve","fixed":"resolve","fixing":"resolve",
+    "close":"resolve","closed":"resolve","closing":"resolve",
+    "remediate":"resolve","remediation":"resolve","correct":"resolve",
+    "corrective":"resolve","address":"resolve","handle":"resolve",
+    "resolve finding":"resolve","close finding":"resolve",
+
+    /* severity/risk variants */
+    "risk":"severity","risks":"severity","priority":"severity",
+    "critical":"severity","urgent":"severity","serious":"severity",
+    "high risk":"severity","low risk":"severity","risk level":"severity",
+    "risk rating":"severity","criticality":"severity",
+
+    /* overdue variants */
+    "late":"overdue","delayed":"overdue","missed":"overdue",
+    "deadline":"overdue","expired":"overdue","past due":"overdue",
+    "overdue item":"overdue","overdue finding":"overdue",
+
+    /* role variants */
+    "roles":"role","permission":"role","permissions":"role",
+    "access":"role","users":"role","account":"role",
+    "audit manager":"role","auditee":"role","observer":"role",
+    "who can":"role","user type":"role","access level":"role",
+
+    /* create/start variants */
+    "create":"create","creating":"create","make":"create",
+    "start":"create","begin":"create","initiate":"create",
+    "add":"create","new":"create","plan":"create","setup":"create",
+
+    /* dashboard variants */
+    "dashboard":"dashboard","overview":"dashboard",
+    "analytics":"dashboard","statistics":"dashboard",
+    "stats":"dashboard","charts":"dashboard","graph":"dashboard",
+    "kpi":"dashboard","metrics":"dashboard","home page":"dashboard",
+    "main page":"dashboard",
+
+    /* compliance variants */
+    "compliance":"compliance","compliant":"compliance",
+    "regulation":"compliance","regulatory":"compliance",
+    "standard":"compliance","policy":"compliance",
+    "iso":"compliance","gdpr":"compliance","sox":"compliance",
+    "framework":"compliance","audit trail":"compliance",
+
+    /* workflow variants */
+    "workflow":"workflow","process":"workflow","steps":"workflow",
+    "step":"workflow","procedure":"workflow","flow":"workflow",
+    "lifecycle":"workflow","cycle":"workflow","stages":"workflow",
+
+    /* login/access variants */
+    "login":"login","signin":"login","sign in":"login",
+    "log in":"login","get started":"login","access system":"login",
+
+    /* logout variants */
+    "logout":"logout","log out":"logout","sign out":"logout",
+    "signout":"logout","exit":"logout","session end":"logout",
+
+    /* department variants */
+    "departments":"department","dept":"department",
+    "team":"department","unit":"department","division":"department",
+
+    /* importance/why variants */
+    "why":"why","importance":"why","benefit":"why","benefits":"why",
+    "advantage":"why","purpose":"why","reason":"why","value":"why",
+    "help":"why","useful":"why"
+  };
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 4 — INTENT KNOWLEDGE BASE (comprehensive — all 8 categories)
+     Each intent:
+       id       — unique string
+       category — grouping for context-awareness
+       combos   — exact multi-word phrases (checked first, highest score)
+       signals  — single normalized tokens
+       reply    — HTML string response
+       suggest  — 2 follow-up suggestions shown after reply
+     ══════════════════════════════════════════════════════════════════════ */
+
+  var KB = [
+
+    /* ── CATEGORY: greeting ─────────────────────────────────────────── */
+    {
+      id:"greeting", category:"greeting",
+      combos:["hello","hi","hey","good morning","good afternoon",
+              "good evening","howdy","hi there","hello there"],
+      signals:["hello","hi","hey","greet"],
+      reply:"Hello! 👋 I am the <strong>AuditShield Assistant</strong> — your intelligent guide to internal audit management and compliance.<br><br>I can help you understand:<br>🔷 How AuditShield works<br>🔷 Audit creation and lifecycle<br>🔷 Findings, severity, and corrective actions<br>🔷 PDF reports and dashboard analytics<br>🔷 User roles and permissions<br><br>What would you like to know?",
+      suggest:["What is AuditShield?","How does the audit workflow work?"]
+    },
+
+    /* ── CATEGORY: system_overview ──────────────────────────────────── */
+    {
+      id:"what_is_auditshield", category:"system_overview",
+      combos:["what is auditshield","about auditshield",
+              "what does auditshield do","tell me about auditshield",
+              "explain auditshield","auditshield overview",
+              "what is this system","what is this platform",
+              "purpose of auditshield","what is this app",
+              "describe auditshield","overview of auditshield"],
+      signals:["auditshield","platform","system","application","software"],
+      reply:"<strong>AuditShield</strong> is an Internal IT Audit Management System — a modern web platform designed to replace fragmented spreadsheets and email chains with a single, intelligent audit hub.<br><br><strong>What it does:</strong><br>📋 <strong>Centralizes</strong> all audits across departments<br>🔍 <strong>Tracks findings</strong> with 4-tier severity classification<br>✅ <strong>Monitors corrective actions</strong> in real time<br>📊 <strong>Visualizes compliance</strong> through live dashboards and charts<br>📄 <strong>Generates</strong> professional PDF audit reports instantly<br>⏰ <strong>Detects overdue</strong> findings automatically<br><br><strong>Problems it solves:</strong><br>❌ No more scattered audit data across emails and files<br>❌ No more missed deadlines or untracked findings<br>❌ No more manual report generation<br>❌ No more unclear accountability between teams",
+      suggest:["How does the audit workflow work?","What are user roles in AuditShield?"]
+    },
+    {
+      id:"how_helps_companies", category:"system_overview",
+      combos:["how does it help","how does auditshield help",
+              "how does this help companies","what problems does it solve",
+              "why use auditshield","benefits of auditshield",
+              "what value does it provide","why is auditshield useful",
+              "advantages of auditshield","what does it improve"],
+      signals:["why","benefit","help","advantage","value","purpose"],
+      reply:"AuditShield helps organizations by:<br><br><strong>🏢 For Management:</strong><br>• Single dashboard showing all audit activities and risk status<br>• Real-time visibility into compliance progress<br>• Automatic overdue alerts prevent missed deadlines<br>• Professional PDF reports ready for regulatory submission<br><br><strong>🔍 For Audit Teams:</strong><br>• Structured workflow replaces manual tracking<br>• Clear severity classification prioritizes effort<br>• Full audit trail ensures accountability<br>• Department-level analytics identify high-risk areas<br><br><strong>📜 For Compliance:</strong><br>• Supports ISO 27001, SOX, GDPR, and NIST frameworks<br>• Timestamped records serve as legal evidence<br>• Role-based access ensures data integrity",
+      suggest:["What is the audit lifecycle?","What does the dashboard show?"]
+    },
+
+    /* ── CATEGORY: audit_workflow ───────────────────────────────────── */
+    {
+      id:"audit_lifecycle", category:"audit_workflow",
+      combos:["audit lifecycle","audit stages","audit phases",
+              "stages of audit","phases of audit","audit cycle",
+              "how does audit work","audit workflow","audit process steps",
+              "what happens in audit","full audit process",
+              "end to end audit","audit from start to finish"],
+      signals:["lifecycle","stages","phases","cycle","workflow","process"],
+      reply:"AuditShield manages the <strong>complete audit lifecycle</strong> in four stages:<br><br><strong>1️⃣ PLANNED</strong><br>The audit is defined and scheduled. Title, department, auditor, scope, and dates are set. The audit exists but has not started yet.<br><br><strong>2️⃣ ONGOING</strong><br>The audit is active. Findings are being recorded and investigated. Auditee teams are responding to issues.<br><br><strong>3️⃣ FINDINGS TRACKED</strong><br>Each finding has a severity level (Critical/High/Medium/Low), recommendation, and target closure date. Corrective actions are monitored.<br><br><strong>4️⃣ CLOSED</strong><br>All critical findings are addressed. The Audit Manager closes the audit and generates a comprehensive PDF report.<br><br>Status transitions: Planned → Ongoing → Closed (controlled by Audit Manager only).",
+      suggest:["How do I create an audit?","What are findings?"]
+    },
+    {
+      id:"create_audit", category:"audit_workflow",
+      combos:["how to create audit","how do i create an audit",
+              "create an audit","create new audit","make an audit",
+              "start an audit","how to start audit","new audit",
+              "plan an audit","schedule an audit","steps to create audit",
+              "add audit","how to make audit","initiate an audit",
+              "how to add an audit","audit creation steps",
+              "creating a new audit","how do i add audit"],
+      signals:["create","audit"],
+      reply:"Creating an audit requires the <strong>Audit Manager</strong> role. Here are the steps:<br><br><strong>Step 1 — Navigate</strong><br>Click <em>Create Audit</em> in the left sidebar.<br><br><strong>Step 2 — Fill in Audit Details</strong><br>• <strong>Audit Title</strong> — clear, descriptive name<br>• <strong>Department</strong> — which department is being audited<br>• <strong>Assigned Auditor</strong> — person leading the audit<br>• <strong>Start Date</strong> — when the audit begins<br>• <strong>End Date</strong> — deadline for completion<br>• <strong>Scope</strong> — what systems/processes are covered<br>• <strong>Objectives</strong> — what the audit aims to achieve<br><br><strong>Step 3 — Set Status</strong><br>Set initial status to <em>Planned</em> and save.<br><br><strong>Step 4 — Add Findings</strong><br>Once the audit starts, change status to <em>Ongoing</em> and begin adding findings from the audit detail page.<br><br>⚠️ Only Audit Managers can create audits. Auditees and Observers have view-only access.",
+      suggest:["What are findings and how do I add them?","What happens after audit creation?"]
+    },
+    {
+      id:"after_audit_creation", category:"audit_workflow",
+      combos:["what happens after audit creation","after creating audit",
+              "next steps after audit","what to do after audit is created",
+              "after audit is made","after audit setup"],
+      signals:["after","next","then","following"],
+      reply:"After creating an audit, here is what happens next:<br><br><strong>1. Audit is in Planned status</strong><br>The audit is visible to all relevant users. No findings yet.<br><br><strong>2. Change to Ongoing</strong><br>When the audit begins, the Audit Manager changes status to <em>Ongoing</em>.<br><br><strong>3. Add Findings</strong><br>From the audit detail page, click <em>Add Finding</em> to log each issue discovered. Assign severity, recommendation, and target date.<br><br><strong>4. Auditee Teams Respond</strong><br>Auditee Heads see findings for their department and add response notes, updating status to In Progress or Closed.<br><br><strong>5. Monitor Progress</strong><br>The dashboard shows real-time progress. Overdue findings trigger automatic alerts.<br><br><strong>6. Close and Report</strong><br>Once satisfied, the Audit Manager closes the audit and downloads the PDF report.",
+      suggest:["How do findings work?","How do I generate the PDF report?"]
+    },
+
+    /* ── CATEGORY: findings_risk ────────────────────────────────────── */
+    {
+      id:"what_are_findings", category:"findings_risk",
+      combos:["what are findings","what is a finding","audit findings",
+              "explain findings","what does finding mean",
+              "finding definition","what is a finding in audit",
+              "findings management","finding detail","tell me about findings",
+              "what are audit findings","describe findings"],
+      signals:["finding"],
+      reply:"<strong>Findings</strong> are the core output of any audit — they represent issues, deficiencies, observations, or control gaps discovered during the audit process.<br><br><strong>Each finding contains:</strong><br>📌 <strong>Title</strong> — short descriptive name of the issue<br>📝 <strong>Description</strong> — detailed explanation of what was found<br>⚠️ <strong>Severity</strong> — Critical / High / Medium / Low classification<br>💡 <strong>Recommendation</strong> — specific guidance on how to fix or mitigate the issue<br>📅 <strong>Target Closure Date</strong> — deadline by which the issue must be resolved<br>🔄 <strong>Status</strong> — Open / In Progress / Closed<br>💬 <strong>Response Notes</strong> — Auditee's description of action taken<br><br><strong>Finding lifecycle:</strong><br>Open → (Auditee responds) → In Progress → (Issue fixed) → Closed",
+      suggest:["What is severity and how is it classified?","How does the Auditee resolve a finding?"]
+    },
+    {
+      id:"severity", category:"findings_risk",
+      combos:["what is severity","severity levels","risk levels",
+              "severity classification","finding severity",
+              "what is risk level","explain severity","critical finding",
+              "high severity finding","audit risk levels","what is critical",
+              "what does severity mean","how is severity determined",
+              "types of severity","risk priority levels"],
+      signals:["severity","risk","priority","critical","urgent"],
+      reply:"AuditShield classifies every finding into one of <strong>four severity levels</strong> based on its potential impact:<br><br><span style=\"color:#dc2626;font-weight:700;\">🔴 CRITICAL</span><br>Poses an immediate and serious threat to operations, security, or compliance. Requires emergency action within days. Highlighted prominently on the dashboard with an alert.<br><br><span style=\"color:#ea580c;font-weight:700;\">🟠 HIGH</span><br>Significant risk that must be addressed urgently within the current audit cycle. Senior management attention required.<br><br><span style=\"color:#ca8a04;font-weight:700;\">🟡 MEDIUM</span><br>Notable concern that should be remediated in the next planning cycle. Monitored closely.<br><br><span style=\"color:#16a34a;font-weight:700;\">🟢 LOW</span><br>Minor issue with limited impact. Should be documented and monitored over time.<br><br><strong>Dashboard impact:</strong><br>• Critical Issues KPI card counts all Critical findings<br>• Severity Distribution doughnut chart shows the breakdown<br>• Critical rows are highlighted in the findings table",
+      suggest:["How does the Auditee resolve a finding?","What is overdue detection?"]
+    },
+    {
+      id:"resolve_finding", category:"findings_risk",
+      combos:["how to resolve finding","how to close finding",
+              "fixing findings","resolve a finding","close an issue",
+              "corrective action","how does auditee respond",
+              "auditee response","respond to finding","update finding status",
+              "how to fix issue","what do auditees do","action plan",
+              "how to handle findings","remediation process",
+              "close a finding","mark finding as closed","finding resolution"],
+      signals:["resolve","correct","remediat","respond","action","fix","close"],
+      reply:"Findings are resolved by the <strong>Auditee Head</strong> through the corrective action process:<br><br><strong>Step 1 — View the Finding</strong><br>The Auditee Head sees all findings for their department in their dashboard and in the audit detail view.<br><br><strong>Step 2 — Add Response Notes</strong><br>Open the finding detail page. In the <em>Response Notes</em> field, describe exactly what corrective action was taken or is planned.<br><br><strong>Step 3 — Update Status</strong><br>• Change to <em>In Progress</em> — work has started but is not complete<br>• Change to <em>Closed</em> — the issue has been fully resolved<br><br><strong>Step 4 — Audit Manager Reviews</strong><br>The Audit Manager reviews the response and confirms closure. Once all findings are addressed, they close the entire audit.<br><br>⚠️ <strong>Important rules:</strong><br>• Auditees can only update findings for their own department<br>• Audit Managers can edit all findings<br>• Once closed, the finding is excluded from overdue counting",
+      suggest:["What is overdue detection?","How do I generate the final PDF report?"]
+    },
+
+    /* ── CATEGORY: overdue_tracking ─────────────────────────────────── */
+    {
+      id:"overdue", category:"overdue_tracking",
+      combos:["what is overdue","overdue findings","overdue items",
+              "overdue detection","how does overdue work",
+              "late findings","missed deadline","overdue alerts",
+              "how to see overdue","how overdue is detected",
+              "automatic overdue","deadline management",
+              "what triggers overdue","overdue notification",
+              "past due findings","how does overdue detection work"],
+      signals:["overdue","late","missed","deadline","expired","past due"],
+      reply:"<strong>Overdue detection in AuditShield is fully automatic</strong> — no manual checking required.<br><br><strong>When does a finding become overdue?</strong><br>A finding is flagged as overdue when BOTH conditions are true:<br>✅ Its Target Closure Date has passed (today is after the deadline)<br>✅ Its status is still <em>Open</em> or <em>In Progress</em> (not yet Closed)<br><br><strong>How overdue is communicated:</strong><br>🔔 <strong>Bell icon</strong> — topbar badge shows the live overdue count on every page<br>📋 <strong>Overdue Items page</strong> — full list of overdue findings AND overdue audits with days elapsed<br>🔴 <strong>KPI Card</strong> — Dashboard Overdue Items card shows total count, clickable<br>⚠️ <strong>Red row highlighting</strong> — overdue rows stand out in all finding and audit tables<br>🔴 <strong>Pulsing red dot</strong> — animated indicator next to each overdue finding<br>📊 <strong>Finding detail</strong> — red Overdue banner shown at top of overdue finding pages<br><br><strong>Overdue audits:</strong><br>An audit itself becomes overdue if its End Date passes while status is still Planned or Ongoing.",
+      suggest:["How do I resolve an overdue finding?","What does the dashboard show?"]
+    },
+
+    /* ── CATEGORY: reports ──────────────────────────────────────────── */
+    {
+      id:"reports", category:"reports",
+      combos:["how to generate report","pdf report","download report",
+              "audit report","generate report","final report",
+              "how to download pdf","export report","report generation",
+              "what is in the report","get report","how to get pdf",
+              "what does the pdf include","what is in the pdf",
+              "report content","who can download report",
+              "how to create report","audit pdf generation"],
+      signals:["report","pdf","download","export","document","generate"],
+      reply:"AuditShield can generate a <strong>professional PDF audit report</strong> in one click — available only when the audit is <em>Closed</em>.<br><br><strong>How to generate a report:</strong><br><strong>1.</strong> Ensure all critical findings are addressed.<br><strong>2.</strong> Open the audit detail page.<br><strong>3.</strong> Change audit status to <em>Closed</em> (Audit Manager only).<br><strong>4.</strong> The <em>Download Report</em> button appears automatically.<br><strong>5.</strong> Click it — a formatted PDF is generated and downloaded instantly.<br><br><strong>What the PDF includes:</strong><br>📋 <strong>Audit Header</strong> — title, department, auditor, dates<br>📊 <strong>Executive Summary</strong> — total findings, open/closed/critical counts<br>⚠️ <strong>Findings Table</strong> — all findings with severity, status, and target date (color-coded by severity)<br>💡 <strong>Recommendations</strong> — each finding's specific remediation guidance<br>📅 <strong>Closure Summary</strong> — overall audit result and timestamps<br>🔏 <strong>Footer</strong> — generation date and confidentiality notice<br><br><strong>Who can download reports?</strong><br>✅ Audit Manager — full access to all audit reports<br>❌ Auditee Head — cannot download reports<br>❌ Observer — cannot download reports",
+      suggest:["What are user roles?","How does the audit lifecycle work?"]
+    },
+
+    /* ── CATEGORY: roles ────────────────────────────────────────────── */
+    {
+      id:"roles", category:"roles",
+      combos:["what are the roles","user roles","who can do what",
+              "permissions","audit manager role","auditee head role",
+              "observer role","role based access","explain roles",
+              "user access","difference between roles","role permissions",
+              "what is audit manager","what is auditee","access control",
+              "role responsibilities","audit manager responsibilities",
+              "auditee responsibilities","what can each role do",
+              "role based access control","rbac"],
+      signals:["role","permission","access","user"],
+      reply:"AuditShield has <strong>three distinct user roles</strong> with carefully defined responsibilities:<br><br><strong>🛡️ AUDIT MANAGER</strong><br><em>Full administrative control</em><br>• Create, edit, and close audits<br>• Add findings and assign severity<br>• View ALL departments and all analytics<br>• Generate and download PDF reports<br>• Monitor all corrective actions across the organization<br>• View overdue findings for all departments<br>• Access the Critical Issues and Overdue Items pages<br><br><strong>👤 AUDITEE HEAD</strong><br><em>Department-level operational access</em><br>• View audits assigned to their department only<br>• Respond to findings with detailed notes<br>• Update finding status (In Progress / Closed)<br>• View their department's analytics<br>• Cannot create audits or view other departments<br><br><strong>👁️ OBSERVER (Admin)</strong><br><em>Organization-wide read-only access</em><br>• View all audits, findings, and department analytics<br>• Monitor dashboard, overdue items, critical issues<br>• Cannot create, edit, or download anything<br>• Ideal for senior management oversight",
+      suggest:["How do I log in and get started?","What does the dashboard show?"]
+    },
+
+    /* ── CATEGORY: dashboard ────────────────────────────────────────── */
+    {
+      id:"dashboard", category:"dashboard",
+      combos:["what does dashboard show","dashboard features",
+              "dashboard overview","how does dashboard work",
+              "explain dashboard","dashboard analytics","dashboard charts",
+              "what are kpi cards","what is on the dashboard",
+              "dashboard statistics","what can i see on dashboard",
+              "main dashboard","analytics dashboard","dashboard page"],
+      signals:["dashboard","analytics","chart","kpi","statistic","metric"],
+      reply:"The <strong>AuditShield Dashboard</strong> is the real-time command center for your entire audit program.<br><br><strong>📊 KPI CARDS (top row — all clickable):</strong><br>🔵 <strong>Total Audits</strong> — all audits in the system → navigates to full audit list<br>🟡 <strong>Open Findings</strong> — all unresolved issues → navigates to findings list<br>🔴 <strong>Critical Issues</strong> — high-risk findings needing urgent attention → navigates to critical issues page<br>⚫ <strong>Overdue Items</strong> — past-deadline findings → navigates to overdue page<br><br><strong>📈 LIVE CHARTS:</strong><br>📊 <strong>Audit Status Overview</strong> — bar chart showing Planned/Ongoing/Closed counts<br>🍩 <strong>Findings by Severity</strong> — doughnut chart with Critical/High/Medium/Low breakdown<br>📏 <strong>Audits per Department</strong> — horizontal bar chart comparing departments<br><br><strong>📋 DATA TABLES (below charts):</strong><br>• <strong>Recent Audits</strong> — last 5 audits with status and department<br>• <strong>Overdue Findings</strong> — list of findings past their deadline<br><br>All charts update in real time as data changes in the system.",
+      suggest:["How do I interpret the severity chart?","What are user roles?"]
+    },
+
+    /* ── CATEGORY: audit_concepts ───────────────────────────────────── */
+    {
+      id:"internal_audit_concept", category:"audit_concepts",
+      combos:["what is internal audit","what is an audit","define audit",
+              "audit definition","what is auditing","explain audit",
+              "audit meaning","what does audit mean","it audit",
+              "internal it audit","what is it audit","audit concept",
+              "what is internal it audit","explain internal audit"],
+      signals:["internal","concept","definition","meaning","define"],
+      reply:"<strong>An Internal IT Audit</strong> is a systematic, independent examination of an organization's IT systems, infrastructure, processes, and controls.<br><br><strong>Purpose:</strong><br>🔒 Identify security vulnerabilities before they are exploited<br>📜 Verify compliance with internal policies and external regulations<br>⚙️ Confirm that IT controls are designed and operating effectively<br>💡 Provide recommendations to strengthen processes<br>📊 Give management assurance that risks are being managed<br><br><strong>Key difference from external audit:</strong><br>Internal audits are conducted by the organization's own team (or designated auditors) for internal improvement. External audits are conducted by third parties for regulatory or financial certification purposes.<br><br>AuditShield digitizes the entire internal IT audit process — from initial planning through findings management to the final signed report.",
+      suggest:["Why is auditing important for organizations?","What is compliance?"]
+    },
+    {
+      id:"why_audit_important", category:"audit_concepts",
+      combos:["why is audit important","why do we need audit",
+              "importance of audit","why audit","purpose of auditing",
+              "why conduct audits","benefit of auditing",
+              "why is internal audit important","value of auditing"],
+      signals:["why","importance","important","value","benefit","need","purpose"],
+      reply:"<strong>Why Internal IT Audits Are Essential:</strong><br><br><strong>🔐 Security Assurance</strong><br>Identifies vulnerabilities in IT systems before malicious actors can exploit them. Prevents data breaches and unauthorized access.<br><br><strong>📜 Regulatory Compliance</strong><br>Ensures the organization meets legal requirements like GDPR, SOX, ISO 27001, and HIPAA. Avoids fines and legal penalties.<br><br><strong>💰 Risk Management</strong><br>Quantifies IT risks and helps management allocate resources to the highest-risk areas first. Reduces financial exposure.<br><br><strong>📊 Process Improvement</strong><br>Identifies inefficiencies and control gaps in IT processes. Drives continuous improvement.<br><br><strong>🤝 Stakeholder Trust</strong><br>Demonstrates to customers, investors, and regulators that the organization takes governance seriously.<br><br><strong>🛡️ Business Continuity</strong><br>Ensures critical IT systems and data are protected, reducing the risk of disruptive incidents.",
+      suggest:["What is compliance?","How does AuditShield support compliance?"]
+    },
+    {
+      id:"compliance", category:"audit_concepts",
+      combos:["what is compliance","compliance management","it compliance",
+              "regulatory compliance","compliance tracking","explain compliance",
+              "how auditshield helps compliance","compliance features",
+              "what standards does it support","iso compliance","gdpr compliance",
+              "sox compliance","audit trail","compliance monitoring"],
+      signals:["compliance","regulation","standard","iso","gdpr","sox"],
+      reply:"<strong>Compliance</strong> means conforming to established rules, policies, laws, or standards that govern how an organization operates its IT systems and handles data.<br><br><strong>Common compliance frameworks supported by AuditShield:</strong><br>📋 <strong>ISO 27001</strong> — Information Security Management<br>💼 <strong>SOX</strong> — Sarbanes-Oxley Financial Controls<br>🔏 <strong>GDPR</strong> — General Data Protection Regulation<br>🛡️ <strong>NIST CSF</strong> — Cybersecurity Framework<br>🏥 <strong>HIPAA</strong> — Healthcare data protection<br><br><strong>How AuditShield supports compliance:</strong><br>📁 <strong>Audit Trail</strong> — every finding, response, and status change is timestamped<br>👥 <strong>Accountability</strong> — role-based access ensures only authorized changes<br>📊 <strong>Evidence Collection</strong> — PDF reports serve as formal compliance documentation<br>⏰ <strong>Deadline Enforcement</strong> — automatic overdue alerts prevent missed compliance deadlines<br>🔍 <strong>Gap Identification</strong> — findings highlight control gaps against standards",
+      suggest:["How does AuditShield detect overdue items?","How are PDF reports generated?"]
+    },
+    {
+      id:"risk_management", category:"audit_concepts",
+      combos:["what is risk management","risk management basics",
+              "how to manage risk","risk in audit","audit risk management",
+              "explain risk management","risk assessment","it risk",
+              "risk control","risk mitigation"],
+      signals:["risk","manage","mitig","assess","control"],
+      reply:"<strong>Risk Management in IT Auditing</strong> is the process of identifying, assessing, prioritizing, and mitigating risks to an organization's IT systems and data.<br><br><strong>The risk management cycle in AuditShield:</strong><br><br><strong>1. Identify Risks</strong><br>Through the audit process, findings are logged for every identified risk or vulnerability.<br><br><strong>2. Assess Severity</strong><br>Each finding is classified as Critical, High, Medium, or Low based on potential impact and likelihood.<br><br><strong>3. Prioritize</strong><br>The dashboard shows Critical Issues prominently. Audit managers focus resources on highest-severity findings first.<br><br><strong>4. Mitigate</strong><br>Auditee teams implement corrective actions and document their response in the system.<br><br><strong>5. Monitor</strong><br>Overdue detection ensures mitigation happens on time. The dashboard tracks progress continuously.<br><br><strong>6. Report</strong><br>PDF reports provide management with a complete risk picture and evidence of remediation.",
+      suggest:["What is severity classification?","What is the corrective action process?"]
+    },
+
+    /* ── CATEGORY: departments ──────────────────────────────────────── */
+    {
+      id:"departments", category:"departments",
+      combos:["what is departments","department analytics","department view",
+              "departments page","how to view department","department details",
+              "what does departments show","department audit","department findings",
+              "how are departments managed","department overview"],
+      signals:["department","dept"],
+      reply:"The <strong>Departments</strong> section gives Audit Managers a complete analytical view of each department's audit health.<br><br><strong>Department Analytics page shows:</strong><br>🏢 All departments with their performance metrics<br>📋 Total audits per department<br>⚠️ Open findings count (highlighted if greater than zero)<br>🔴 Overdue findings count (highlighted in danger color)<br>✅ Closed audits count<br><br><strong>Department Detail page shows:</strong><br>🍩 <strong>Severity Distribution</strong> — doughnut chart of finding severity<br>📊 <strong>Audit Status Breakdown</strong> — bar chart of audit statuses<br>📋 <strong>All audits</strong> for this department in a table<br>⚠️ <strong>All open/overdue findings</strong> for this department<br><br><strong>Auditee access:</strong><br>Auditee Heads only see data for their own assigned department.",
+      suggest:["How does the dashboard work?","What are user roles?"]
+    },
+
+    /* ── CATEGORY: login_access ─────────────────────────────────────── */
+    {
+      id:"login", category:"login_access",
+      combos:["how to login","how do i login","how to sign in",
+              "how to get started","getting started","how to access",
+              "first time login","sign in process","access the system",
+              "how to open auditshield","logging in"],
+      signals:["login","signin","started","access","enter"],
+      reply:"Getting started with AuditShield is straightforward:<br><br><strong>Step 1 — Go to the login page</strong><br>Click the <em>Get Started</em> button on this landing page.<br><br><strong>Step 2 — Enter your credentials</strong><br>Use the username and password assigned by your system administrator.<br><br><strong>Step 3 — Access your role-specific dashboard</strong><br>• <strong>Audit Manager</strong> → Full dashboard with charts, KPI cards, all features<br>• <strong>Auditee Head</strong> → Department-filtered dashboard with your findings<br>• <strong>Observer</strong> → Read-only view of all audit data<br><br><strong>Demo credentials:</strong><br>• manager1 / demo1234 (Audit Manager — full access)<br>• auditee1 / demo1234 (IT Department Auditee)<br>• auditee2 / demo1234 (Finance Department Auditee)<br>• admin / admin123 (Observer — read-only)",
+      suggest:["What can each role do?","What does the dashboard show?"]
+    },
+    {
+      id:"logout", category:"login_access",
+      combos:["how to logout","how to log out","how to sign out",
+              "logout process","where is logout","session end"],
+      signals:["logout","signout","exit"],
+      reply:"To log out of AuditShield:<br><br><strong>Option 1 — Sidebar</strong><br>Click <em>Sign Out</em> at the bottom of the left navigation sidebar.<br><br><strong>Option 2 — User Dropdown</strong><br>Click the user button in the top-right corner, then select <em>Sign Out</em> from the dropdown menu.<br><br><strong>After logout:</strong><br>• You are returned to the AuditShield landing page<br>• Your session is fully cleared for security<br>• The browser back button will NOT show authenticated pages<br>• You must log in again to access any data",
+      suggest:["How do I log back in?","What are the user roles?"]
+    },
+
+    /* ── CATEGORY: profile ──────────────────────────────────────────── */
+    {
+      id:"profile", category:"profile",
+      combos:["how to change password","change my password","my profile",
+              "edit profile","update profile","profile settings",
+              "change email","update name","personal information",
+              "account settings","profile management"],
+      signals:["password","profile","personal","account"],
+      reply:"To manage your profile in AuditShield:<br><br><strong>Accessing your profile:</strong><br>Click the user button (top-right corner of the dashboard) → select <em>My Profile</em>.<br><br><strong>What you can edit:</strong><br>✏️ <strong>First Name</strong> and <strong>Last Name</strong><br>📧 <strong>Email Address</strong><br><br><strong>Read-only fields:</strong><br>🔒 <strong>Username</strong> — cannot be changed<br>🏷️ <strong>Role</strong> — assigned by administrator<br><br><strong>To change your password:</strong><br>1. Click the user dropdown → <em>Change Password</em><br>2. Enter your current password for verification<br>3. Enter your new password twice to confirm<br>4. Submit — you remain logged in immediately<br>5. Next login: use your username + new password<br><br>⚠️ Your username cannot be changed by anyone including the administrator.",
+      suggest:["How do I log out?","What are my role permissions?"]
+    },
+
+    /* ── CATEGORY: features ─────────────────────────────────────────── */
+    {
+      id:"features", category:"features",
+      combos:["what are the features","list of features","all features",
+              "feature list","platform capabilities","key features",
+              "main features","core features","what can auditshield do",
+              "system capabilities","what does it offer"],
+      signals:["feature","capabilit","offer","function"],
+      reply:"<strong>AuditShield Complete Feature Set:</strong><br><br>🔷 <strong>Audit Lifecycle Management</strong><br>&nbsp;&nbsp;Full cycle: Plan → Execute → Close with status tracking<br><br>🔷 <strong>Risk-Based Findings Tracking</strong><br>&nbsp;&nbsp;4-level severity with recommendations and deadlines<br><br>🔷 <strong>Automatic Overdue Detection</strong><br>&nbsp;&nbsp;Real-time alerts for past-deadline findings and audits<br><br>🔷 <strong>Corrective Action Monitoring</strong><br>&nbsp;&nbsp;Auditee response tracking with full audit trail<br><br>🔷 <strong>Department Analytics</strong><br>&nbsp;&nbsp;Per-department charts, findings, and performance metrics<br><br>🔷 <strong>PDF Report Generation</strong><br>&nbsp;&nbsp;Professional one-click audit reports with full findings detail<br><br>🔷 <strong>Role-Based Access Control</strong><br>&nbsp;&nbsp;3 roles: Audit Manager, Auditee Head, Observer<br><br>🔷 <strong>Real-Time Dashboard</strong><br>&nbsp;&nbsp;Live KPI cards, 3 chart types, recent audits, overdue list<br><br>🔷 <strong>Profile and Password Management</strong><br>&nbsp;&nbsp;Self-service account settings for all users<br><br>🔷 <strong>Landing Page with AI Chatbot</strong><br>&nbsp;&nbsp;Smart assistant to guide users and answer queries",
+      suggest:["How does the dashboard work?","How do I create my first audit?"]
+    },
+
+    /* ── CATEGORY: thanks ───────────────────────────────────────────── */
+    {
+      id:"thanks", category:"thanks",
+      combos:["thank you","thanks a lot","thanks so much","appreciate it",
+              "that was helpful","very helpful","many thanks","great help"],
+      signals:["thank","thanks","appreciate","helpful","great"],
+      reply:"You are very welcome! 😊 I am always here to help with AuditShield and internal audit questions.<br><br>Feel free to ask anything else — whether it is about creating audits, understanding findings, generating reports, or how user roles work.",
+      suggest:["What else can I help you with?","Ask me anything about audits!"]
+    },
+
+    /* ── CATEGORY: help ─────────────────────────────────────────────── */
+    {
+      id:"help_topics", category:"help",
+      combos:["help me","what can you help with","what can you answer",
+              "what do you know","what topics","what questions can i ask",
+              "i need help","what can i ask","guide me","topics",
+              "what are your capabilities","show me what you know"],
+      signals:["help","assist","guide","topic","capabilit"],
+      reply:"I am your <strong>AuditShield Assistant</strong>. Here is everything I can help you with:<br><br>🔷 <strong>System Overview</strong> — What is AuditShield, its purpose and benefits<br>🔷 <strong>Audit Workflow</strong> — Creating audits, lifecycle stages, what happens next<br>🔷 <strong>Findings Management</strong> — What findings are, how to add and track them<br>🔷 <strong>Severity and Risk</strong> — Critical/High/Medium/Low classification<br>🔷 <strong>Corrective Actions</strong> — How auditees respond and close findings<br>🔷 <strong>Overdue Tracking</strong> — Automatic detection and deadline management<br>🔷 <strong>PDF Reports</strong> — Generating, downloading, and report contents<br>🔷 <strong>User Roles</strong> — Audit Manager, Auditee Head, Observer permissions<br>🔷 <strong>Dashboard Analytics</strong> — KPI cards, charts, and real-time data<br>🔷 <strong>Compliance Concepts</strong> — Internal audit, risk management, frameworks<br>🔷 <strong>Account Management</strong> — Login, logout, profile, password<br><br>Just type your question in natural language!",
+      suggest:["What is AuditShield?","How does the audit workflow work?"]
+    }
+
+  ]; /* END KB */
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 5 — CONTEXT-AWARE SUGGESTION MAP
+     Maps category → related follow-up category suggestions
+     ══════════════════════════════════════════════════════════════════════ */
+  var CONTEXT_SUGGESTIONS = {
+    "system_overview":   ["audit_workflow","roles"],
+    "audit_workflow":    ["findings_risk","reports"],
+    "findings_risk":     ["overdue_tracking","corrective_actions"],
+    "overdue_tracking":  ["findings_risk","dashboard"],
+    "reports":           ["audit_workflow","roles"],
+    "roles":             ["dashboard","login_access"],
+    "dashboard":         ["audit_workflow","reports"],
+    "audit_concepts":    ["system_overview","compliance"],
+    "departments":       ["dashboard","roles"],
+    "login_access":      ["roles","dashboard"],
+    "profile":           ["login_access","roles"],
+    "features":          ["dashboard","audit_workflow"],
+    "greeting":          ["system_overview","help"],
+    "help":              ["system_overview","audit_workflow"]
+  };
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 6 — GRADUATED FALLBACK RESPONSES
+     ══════════════════════════════════════════════════════════════════════ */
+  var FALLBACKS = [
+    "I may not have specific details on that topic, but I can help you with <strong>audit processes, compliance tracking, findings management, and how AuditShield works</strong>.<br><br>Try asking about:<br>• How to create an audit<br>• What findings are<br>• How the dashboard works<br>• What user roles are available",
+    "That is slightly outside my specialized knowledge area. I am an expert in <strong>internal IT audit management</strong> — AuditShield's features, workflow, findings, severity, overdue tracking, PDF reports, and user roles.<br><br>What audit-related topic can I help you with?",
+    "I am designed specifically for <strong>audit and compliance topics</strong>. If your question relates to audits, findings, reports, compliance frameworks, or how AuditShield works — I can give you a detailed, accurate answer.<br><br>What would you like to know about the audit management process?",
+    "Good question — though it is slightly outside my area of expertise. I specialize in internal IT audit management.<br><br>I can give expert answers on: audit planning, findings and severity, corrective actions, overdue detection, PDF reports, user roles, and compliance frameworks.<br><br>Feel free to rephrase or ask one of those topics!"
+  ];
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 7 — MATCHING ENGINE
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* 7A — Levenshtein distance */
+  function lev(a, b) {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+    var m = [];
+    for (var i = 0; i <= b.length; i++) { m[i] = [i]; }
+    for (var j = 0; j <= a.length; j++) { m[0][j] = j; }
+    for (var i = 1; i <= b.length; i++) {
+      for (var j = 1; j <= a.length; j++) {
+        m[i][j] = b[i-1] === a[j-1]
+          ? m[i-1][j-1]
+          : 1 + Math.min(m[i-1][j-1], m[i][j-1], m[i-1][j]);
+      }
+    }
+    return m[b.length][a.length];
+  }
+
+  /* 7B — Token similarity score 0.0–1.0 */
+  function tokenSim(w, t) {
+    if (w === t) return 1.0;
+    if (w.indexOf(t) !== -1) return 0.92;
+    if (t.indexOf(w) !== -1) return 0.88;
+    var mx = Math.max(w.length, t.length);
+    if (mx < 4) return 0;
+    return Math.max(0, 1 - lev(w, t) / mx);
+  }
+
+  /* 7C — Normalize text and expand synonyms */
+  function normalize(text) {
+    var t = (text || "").toLowerCase()
+              .replace(/[?!.,;:'"()\[\]{}@#$%^&*]/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+    /* Apply synonyms — longest phrases first to avoid partial replacement */
+    var keys = Object.keys(SYN).sort(function(a,b){
+      return b.length - a.length;
+    });
+    for (var i = 0; i < keys.length; i++) {
+      if (t.indexOf(keys[i]) !== -1) {
+        t = t.split(keys[i]).join(SYN[keys[i]]);
+      }
+    }
+    return t.replace(/\s+/g, " ").trim();
+  }
+
+  /* 7D — Score a single intent against normalized query */
+  function scoreIntent(intent, q) {
+    var score = 0;
+    var qwords = q.split(" ").filter(function(w){ return w.length > 1; });
+
+    /* COMBO exact match — highest priority */
+    for (var c = 0; c < intent.combos.length; c++) {
+      var combo = intent.combos[c];
+      if (q === combo || q.indexOf(combo) !== -1) {
+        var boost = 0.95 + (combo.length / 2000);
+        score = Math.max(score, Math.min(boost, 1.0));
+      }
+    }
+
+    /* COMBO fuzzy match — for slight wording variations */
+    for (var c = 0; c < intent.combos.length; c++) {
+      var cwords = intent.combos[c].split(" ");
+      var matched = 0;
+      var totalSim = 0;
+      for (var ci = 0; ci < cwords.length; ci++) {
+        if (cwords[ci].length < 3) { matched++; totalSim += 1; continue; }
+        var bestSim = 0;
+        for (var wi = 0; wi < qwords.length; wi++) {
+          var s = tokenSim(qwords[wi], cwords[ci]);
+          if (s > bestSim) bestSim = s;
+        }
+        if (bestSim >= 0.78) { matched++; totalSim += bestSim; }
+      }
+      if (cwords.length > 0) {
+        var ratio = matched / cwords.length;
+        if (ratio >= 0.72) {
+          var fuzzyScore = 0.65 + (totalSim / cwords.length) * 0.22;
+          score = Math.max(score, fuzzyScore);
+        }
+      }
+    }
+
+    /* SIGNAL token match */
+    var sigHits = 0;
+    for (var si = 0; si < intent.signals.length; si++) {
+      var sig = intent.signals[si];
+      if (q.indexOf(sig) !== -1) {
+        sigHits += 1.0;
+        continue;
+      }
+      for (var wi = 0; wi < qwords.length; wi++) {
+        var s = tokenSim(qwords[wi], sig);
+        if (s >= 0.78) { sigHits += s * 0.75; break; }
+      }
+    }
+    if (intent.signals.length > 0) {
+      var sigScore = (sigHits / intent.signals.length) * 0.58;
+      score = Math.max(score, sigScore);
+    }
+
+    /* CONTEXT BOOST — boost intents in same category as last intent */
+    if (lastIntentId && lastCategory) {
+      var suggested = CONTEXT_SUGGESTIONS[lastCategory] || [];
+      for (var si = 0; si < suggested.length; si++) {
+        if (intent.category === suggested[si]) {
+          score = Math.min(score * 1.12, 0.94);
+          break;
+        }
+      }
+    }
+
+    return score;
+  }
+
+  /* 7E — Find best matching intent */
+  function matchIntent(rawQuery) {
+    if (!rawQuery || !rawQuery.trim()) return null;
+    var q = normalize(rawQuery);
+    var bestScore  = 0;
+    var bestIntent = null;
+    var THRESHOLD  = 0.35;
+    for (var i = 0; i < KB.length; i++) {
+      var s = scoreIntent(KB[i], q);
+      if (s > bestScore) { bestScore = s; bestIntent = KB[i]; }
+    }
+    return bestScore >= THRESHOLD ? bestIntent : null;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 8 — RESPONSE BUILDER WITH SUGGESTIONS
+     ══════════════════════════════════════════════════════════════════════ */
+  function buildResponse(intent) {
+    var reply = typeof intent.reply === "function"
+      ? intent.reply()
+      : intent.reply;
+
+    /* Add suggestion chips if available and not same intent repeated */
+    if (intent.suggest && intent.suggest.length > 0
+        && intent.id !== lastIntentId) {
+      reply += "<div class=\"cb-suggest-row\" style=\"margin-top:12px;"
+             + "display:flex;flex-wrap:wrap;gap:6px;\">";
+      reply += "<div style=\"width:100%;font-size:11px;"
+             + "color:rgba(0,229,200,0.5);margin-bottom:4px;"
+             + "font-weight:600;text-transform:uppercase;"
+             + "letter-spacing:0.5px;\">Related:</div>";
+      for (var i = 0; i < intent.suggest.length; i++) {
+        var sug = intent.suggest[i];
+        reply += "<button class=\"cb-tag\" onclick=\"cbQuick('"
+               + sug.replace(/'/g, "\\'")
+               + "')\" style=\"font-size:11.5px;\">"
+               + sug + "</button>";
+      }
+      reply += "</div>";
+    }
+
+    lastIntentId = intent.id;
+    lastCategory = intent.category;
+    return reply;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 9 — UI ENGINE
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function scrollBot() {
+    setTimeout(function(){ messages.scrollTop = messages.scrollHeight; }, 60);
+  }
+
+  function mkMsg(html, type) {
+    var wrap = document.createElement("div");
+    wrap.className = "cb-msg cb-msg-" + type;
+    var av = document.createElement("div");
+    av.className = "cb-msg-avatar";
+    var ic = document.createElement("i");
+    if (type === "bot") {
+      ic.className = "bi bi-shield-check";
+    } else {
+      ic.className = "bi bi-person-fill";
+      av.style.background  = "rgba(0,229,200,0.15)";
+      av.style.borderColor = "rgba(0,229,200,0.3)";
+      ic.style.color    = "#00e5c8";
+      ic.style.fontSize = "13px";
+    }
+    av.appendChild(ic);
+    var bub = document.createElement("div");
+    bub.className = "cb-msg-bubble";
+    bub.innerHTML = html;
+    wrap.appendChild(av);
+    wrap.appendChild(bub);
+    return wrap;
+  }
+
+  function addUser(text) {
+    var safe = text.replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    messages.appendChild(mkMsg(safe, "user"));
+    scrollBot();
+  }
+
+  function addBot(html, delay) {
+    delay = delay || 0;
+    setTimeout(function(){
+      if (typingEl) typingEl.classList.remove("visible");
+      messages.appendChild(mkMsg(html, "bot"));
+      scrollBot();
+    }, delay);
+  }
+
+  function showTyping(dur) {
+    if (typingEl) typingEl.classList.add("visible");
+    scrollBot();
+    setTimeout(function(){ isTyping = false; }, dur);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 10 — PUBLIC CHATBOT API
+     ══════════════════════════════════════════════════════════════════════ */
+
+  window.cbSend = function() {
+    var text = inp ? inp.value.trim() : "";
+    if (!text || isTyping) return;
+    if (inp) inp.value = "";
+    if (inp) inp.focus();
+    if (sendBtn) sendBtn.disabled = true;
+    turnCount++;
+    isTyping = true;
+
+    addUser(text);
+
+    var intent = matchIntent(text);
+    var reply  = intent
+      ? buildResponse(intent)
+      : FALLBACKS[fallbackIdx++ % FALLBACKS.length];
+
+    var delay = 600 + Math.min(reply.length / 10, 900) + Math.random() * 250;
+    showTyping(delay);
+    addBot(reply, delay + 80);
+
+    setTimeout(function(){
+      if (sendBtn) sendBtn.disabled = false;
+    }, delay + 200);
+  };
+
+  window.cbQuick = function(text) {
+    if (inp) inp.value = text;
+    window.cbSend();
+  };
+
+  window.cbToggle = function() {
+    isOpen = !isOpen;
+    if (isOpen) {
+      if (panel)    panel.classList.add("cb-open");
+      if (trigger)  trigger.classList.add("cb-hidden");
+      if (backdrop) backdrop.classList.add("visible");
+      if (unread)   unread.classList.remove("visible");
+      setTimeout(function(){ if (inp) inp.focus(); }, 300);
+    } else {
+      if (panel)    panel.classList.remove("cb-open");
+      if (trigger)  trigger.classList.remove("cb-hidden");
+      if (backdrop) backdrop.classList.remove("visible");
+    }
+  };
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 11 — VOICE ASSISTANT
+     Works with existing mic button (id="cbVoiceBtn") if present in HTML.
+     If no mic button exists in HTML, voice can be triggered by calling
+     window.cbVoiceStart() from any button onclick attribute.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  var SpeechRecognition = window.SpeechRecognition
+                       || window.webkitSpeechRecognition
+                       || null;
+
+  var recognition  = null;
+  var isListening  = false;
+  var voiceBtn     = document.getElementById("cbVoiceBtn");
+
+  /* ── Voice: update button visual state ── */
+  function setVoiceState(listening) {
+    isListening = listening;
+    if (!voiceBtn) return;
+    if (listening) {
+      voiceBtn.style.background = "linear-gradient(135deg,#ef4444,#dc2626)";
+      voiceBtn.style.boxShadow  = "0 0 20px rgba(239,68,68,0.6)";
+      voiceBtn.title = "Listening... click to stop";
+      voiceBtn.innerHTML = "<i class=\"bi bi-mic-fill\" "
+        + "style=\"font-size:14px;color:#0a0e1a;\"></i>"
+        + "<span style=\"position:absolute;top:-3px;right:-3px;"
+        + "width:10px;height:10px;background:#fff;border-radius:50%;"
+        + "border:2px solid #ef4444;animation:cb-online-blink 0.8s "
+        + "ease infinite;\"></span>";
+    } else {
+      voiceBtn.style.background = "rgba(0,229,200,0.12)";
+      voiceBtn.style.boxShadow  = "none";
+      voiceBtn.title = "Click to speak";
+      voiceBtn.innerHTML = "<i class=\"bi bi-mic\" "
+        + "style=\"font-size:14px;color:#00e5c8;\"></i>";
+    }
+  }
+
+  /* ── Voice: show interim transcript in input ── */
+  function showInterim(text) {
+    if (inp) {
+      inp.value = text;
+      inp.style.color = "rgba(0,229,200,0.6)";
+    }
+  }
+
+  /* ── Voice: clear interim styling ── */
+  function clearInterim() {
+    if (inp) { inp.style.color = ""; }
+  }
+
+  /* ── Voice: initialize recognition ── */
+  function initRecognition() {
+    if (!SpeechRecognition) return null;
+    var r = new SpeechRecognition();
+    r.continuous     = false;
+    r.interimResults = true;
+    r.lang           = "en-US";
+    r.maxAlternatives = 1;
+
+    r.onstart = function() {
+      setVoiceState(true);
+      if (inp) inp.placeholder = "Listening...";
+    };
+
+    r.onresult = function(e) {
+      var interim = "";
+      var final   = "";
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        var t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) { final += t; }
+        else { interim += t; }
+      }
+      if (interim) showInterim(interim);
+      if (final) {
+        clearInterim();
+        if (inp) inp.value = final;
+        /* Auto-send after short pause */
+        setTimeout(function(){ window.cbSend(); }, 300);
+      }
+    };
+
+    r.onerror = function(e) {
+      setVoiceState(false);
+      clearInterim();
+      if (inp) inp.placeholder = "Ask about audits & compliance...";
+      var msg = "Voice recognition error.";
+      if (e.error === "not-allowed") {
+        msg = "Microphone access was denied. Please allow microphone "
+            + "access in your browser settings and try again.";
+      } else if (e.error === "no-speech") {
+        msg = "No speech detected. Please try again.";
+      } else if (e.error === "network") {
+        msg = "Network error during voice recognition. "
+            + "Please check your connection.";
+      }
+      addBot(msg, 200);
+    };
+
+    r.onend = function() {
+      setVoiceState(false);
+      clearInterim();
+      if (inp) inp.placeholder = "Ask about audits & compliance...";
+    };
+
+    return r;
+  }
+
+  /* ── Voice: start listening ── */
+  window.cbVoiceStart = function() {
+    /* Check browser support */
+    if (!SpeechRecognition) {
+      addBot("Voice input is not supported in this browser. "
+           + "Please use Google Chrome or Microsoft Edge for voice support. "
+           + "You can still type your question below.", 200);
+      return;
+    }
+    /* Panel must be open */
+    if (!isOpen) window.cbToggle();
+    /* Toggle off if already listening */
+    if (isListening && recognition) {
+      recognition.stop();
+      return;
+    }
+    /* Initialize fresh recognition each time */
+    recognition = initRecognition();
+    if (!recognition) return;
+    try {
+      recognition.start();
+    } catch(err) {
+      setVoiceState(false);
+      addBot("Could not start voice recognition. "
+           + "Please ensure microphone access is allowed "
+           + "and try again.", 200);
+    }
+  };
+
+  /* ── Voice: connect to existing mic button if present ── */
+  if (voiceBtn) {
+    /* Remove any existing onclick to avoid duplicates */
+    voiceBtn.onclick = null;
+    voiceBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      window.cbVoiceStart();
+    });
+    /* Apply initial styling */
+    voiceBtn.style.cssText = [
+      "width:36px",
+      "height:36px",
+      "border-radius:9px",
+      "background:rgba(0,229,200,0.12)",
+      "border:1px solid rgba(0,229,200,0.2)",
+      "display:flex",
+      "align-items:center",
+      "justify-content:center",
+      "cursor:pointer",
+      "transition:all 0.18s ease",
+      "position:relative",
+      "flex-shrink:0"
+    ].join(";");
+    voiceBtn.innerHTML = "<i class=\"bi bi-mic\" "
+      + "style=\"font-size:14px;color:#00e5c8;\"></i>";
+    voiceBtn.title = "Click to speak";
+  }
+
+  /* ── If no voice button in HTML, add one to input area ── */
+  if (!voiceBtn && SpeechRecognition && inp) {
+    var wrap = inp.parentElement;
+    if (wrap) {
+      var micBtn = document.createElement("button");
+      micBtn.id    = "cbVoiceBtn";
+      micBtn.title = "Click to speak";
+      micBtn.type  = "button";
+      micBtn.style.cssText = [
+        "width:36px",
+        "height:36px",
+        "border-radius:9px",
+        "background:rgba(0,229,200,0.12)",
+        "border:1px solid rgba(0,229,200,0.2)",
+        "display:flex",
+        "align-items:center",
+        "justify-content:center",
+        "cursor:pointer",
+        "transition:all 0.18s ease",
+        "position:relative",
+        "flex-shrink:0"
+      ].join(";");
+      micBtn.innerHTML = "<i class=\"bi bi-mic\" "
+        + "style=\"font-size:14px;color:#00e5c8;\"></i>";
+      micBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        window.cbVoiceStart();
+      });
+      /* Insert before send button */
+      var sb = document.getElementById("cbSendBtn");
+      if (sb) { wrap.insertBefore(micBtn, sb); }
+      else { wrap.appendChild(micBtn); }
+      voiceBtn = micBtn;
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BLOCK 12 — EVENT LISTENERS AND INIT
+     ══════════════════════════════════════════════════════════════════════ */
+
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && isOpen) window.cbToggle();
+  });
+
+  if (trigger) {
+    trigger.addEventListener("keydown", function(e){
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        window.cbToggle();
+      }
+    });
+  }
+
+  /* Show unread dot after 4 seconds */
+  setTimeout(function(){
+    if (!isOpen && unread) unread.classList.add("visible");
+  }, 4000);
+
+  /* Pre-warm recognition object for faster first response */
+  if (SpeechRecognition) {
+    setTimeout(function(){ recognition = initRecognition(); }, 1000);
+  }
+
+}());
+
+</script>
+
+
+
+</body>
+</html>
